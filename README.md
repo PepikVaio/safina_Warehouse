@@ -38,7 +38,7 @@ Příklad struktury:
 {
   "users": [
     {
-      "tokenHash": "SEM_VLOZ_SHA256_OTISK_TOKENU_JAKUBA",
+      "tokenHash": "8afc7fdb4006e439753e295a4c84f43b2cc66bad83f00ab9cdd6dd33edd49b6a",
       "firstName": "Jakub",
       "lastName": "Vanta",
       "role": "read"
