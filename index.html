@@ -1,142 +1,32 @@
 <!doctype html>
 <html lang="cs">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#172033">
-  <title>Sklad náhradních dílů</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- QR knihovna se načítá z CDN; pro ostrý provoz ji později můžeme přidat lokálně. -->
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#172033">
+  <title>Sklad náhradních dílů</title><link rel="stylesheet" href="style.css">
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark">S</div>
-      <div><strong>Sklad</strong><small>Náhradní díly</small></div>
-    </div>
-    <div class="top-actions">
-      <span class="save-state" id="saveState">Demo režim</span>
-      <button class="btn btn-primary" id="newPartBtn">＋ Nová karta</button>
-    </div>
-  </header>
-
-  <main class="container">
-    <section class="page-heading">
-      <div>
-        <p class="eyebrow">SKLADOVÁ EVIDENCE</p>
-        <h1>Přehled skladu</h1>
-        <p class="muted">Evidence náhradních dílů, umístění a skladových zásob.</p>
-      </div>
-    </section>
-
-    <section class="stats">
-      <article class="stat-card"><span>Počet položek</span><strong id="statParts">0</strong></article>
-      <article class="stat-card"><span>Celkem kusů</span><strong id="statQty">0</strong></article>
-      <article class="stat-card"><span>Položky bez zásoby</span><strong id="statEmpty">0</strong></article>
-    </section>
-
-    <nav class="main-nav" aria-label="Hlavní nabídka">
-      <button class="nav-btn active" data-view="stock">▦ Sklad</button>
-      <button class="nav-btn" data-view="in">＋ Naskladnění</button>
-      <button class="nav-btn" data-view="out">− Vyskladnění</button>
-    </nav>
-
-    <section id="stockView" class="view">
-      <div class="toolbar">
-        <div class="search-wrap"><span>⌕</span><input id="searchInput" type="search" placeholder="Hledat název, číslo, dodavatele, kartu…"></div>
-        <select id="stockFilter" aria-label="Filtr skladu">
-          <option value="all">Všechny položky</option>
-          <option value="in">Na skladě</option>
-          <option value="empty">Vyprodáno</option>
-        </select>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Název <button class="filter-toggle" data-filter="name">⌄</button></th>
-            <th>Objednací číslo</th>
-            <th>Datum naskladnění</th>
-            <th>Množství</th>
-            <th>Umístění</th>
-            <th>Dodavatel 1</th>
-            <th>Cena 1</th>
-            <th>Interní karta</th>
-            <th>Středisko</th>
-            <th>Zařízení</th>
-            <th class="actions-col">Akce</th>
-          </tr></thead>
-          <tbody id="partsTable"></tbody>
-        </table>
-      </div>
-      <p class="table-note">Tabulka slouží pouze k zobrazení. Veškeré změny se provádějí přes samostatné formuláře.</p>
-    </section>
-
-    <section id="movementView" class="view hidden">
-      <div class="panel movement-panel">
-        <div>
-          <p class="eyebrow" id="movementEyebrow">SKLADOVÝ POHYB</p>
-          <h2 id="movementTitle">Naskladnění</h2>
-          <p class="muted" id="movementDescription">Vyber díl, umístění a množství.</p>
-        </div>
-        <form id="movementForm" class="form-grid">
-          <label class="field full"><span>Náhradní díl</span><select id="movementPart" required></select></label>
-          <label class="field"><span>Umístění</span><select id="movementLocation" required></select></label>
-          <div id="newLocationFields" class="field hidden"><span>Nové umístění</span><div class="new-location-inputs"><input id="newRack" placeholder="Regál" aria-label="Nový regál"><input id="newBox" placeholder="Box" aria-label="Nový box"></div></div>
-          <label class="field"><span>Množství (ks)</span><input id="movementQty" type="number" min="1" step="1" value="1" required></label>
-          <p class="inline-error full" id="movementError"></p>
-          <div class="form-actions full"><button type="button" class="btn btn-light" id="cancelMovement">Zpět</button><button class="btn btn-primary" type="submit" id="movementSubmit">Potvrdit naskladnění</button></div>
-        </form>
-      </div>
-    </section>
-  </main>
-
-  <dialog id="partDialog" class="dialog">
-    <form id="partForm" method="dialog">
-      <div class="dialog-header">
-        <div><p class="eyebrow">KARTA NÁHRADNÍHO DÍLU</p><h2 id="dialogTitle">Nová karta</h2></div>
-        <button type="button" class="icon-btn" id="closeDialog" aria-label="Zavřít">×</button>
-      </div>
-      <input type="hidden" id="partId">
-      <input type="hidden" id="partCreatedAt">
-      <div class="form-grid">
-        <label class="field full"><span>Název dílu *</span><input id="partName" required placeholder="Např. Kalhoty Max Neo"></label>
-        <label class="field"><span>Objednací číslo</span><input id="partNumber" placeholder="47294759208"></label>
-        <label class="field"><span>Interní ID</span><input id="partInternalId" readonly placeholder="Přidělí se automaticky"></label>
-
-        <div class="section-label full">Dodavatelé</div>
-        <div id="suppliers" class="supplier-list full"></div>
-        <button type="button" class="btn btn-light full" id="addSupplier">＋ Přidat dodavatele</button>
-
-        <div class="section-label full">Interní informace</div>
-        <label class="field"><span>Interní karta</span><input id="partCard" placeholder="SBA.152"></label>
-        <label class="field"><span>Středisko</span><input id="partCostCenter" placeholder="100"></label>
-        <label class="field full"><span>Zařízení</span><input id="partMachine" placeholder="Lis 01"></label>
-        <label class="field full"><span>Poznámka</span><textarea id="partNote" rows="3" placeholder="Volitelná poznámka"></textarea></label>
-
-        <div class="section-label full">Umístění a množství</div>
-        <div id="locations" class="location-list full"></div>
-        <button type="button" class="btn btn-light full" id="addLocation">＋ Přidat umístění</button>
-
-        <div class="qr-preview full">
-          <div><strong>QR kód dílu</strong><p class="muted small">QR identifikuje díl pomocí jeho interního ID.</p></div>
-          <div id="qrCode" class="qr-box"><span class="muted small">Vygeneruje se při uložení</span></div>
-        </div>
-      </div>
-      <div class="dialog-footer">
-        <button type="button" class="btn btn-light" id="cancelPart">Zrušit</button>
-        <button type="submit" class="btn btn-primary">Uložit kartu</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="qrDialog" class="dialog qr-dialog">
-    <div class="dialog-header"><div><p class="eyebrow">IDENTIFIKACE DÍLU</p><h2>QR štítek</h2></div><button class="icon-btn" id="closeQr">×</button></div>
-    <div class="label-preview" id="printLabel"><div id="printQr"></div><div><strong id="printName"></strong><small id="printNumber"></small><small id="printId"></small></div></div>
-    <div class="dialog-footer"><button class="btn btn-light" id="closeQr2">Zavřít</button><button class="btn btn-primary" id="printBtn">Tisk štítku</button></div>
-  </dialog>
-
-  <div class="toast" id="toast" role="status"></div>
-</body>
-</html>
+<header class="topbar"><div class="brand"><div class="brand-mark">S</div><div><strong>Sklad</strong><small>Náhradní díly</small></div></div><div class="top-actions"><span class="save-state" id="saveState">Nepřipojeno</span><button class="btn btn-light" id="settingsBtn">⚙ Nastavení</button><button class="btn btn-primary" id="newPartBtn">＋ Nová karta</button></div></header>
+<main class="container">
+  <section class="page-heading"><div><p class="eyebrow">SKLADOVÁ EVIDENCE</p><h1 id="pageTitle">Přehled skladu</h1><p class="muted">Společný sklad synchronizovaný přes soukromý GitHub repozitář.</p></div><button class="btn btn-light" id="refreshBtn">↻ Obnovit data</button></section>
+  <section class="stats"><article class="stat-card"><span>Počet položek</span><strong id="statParts">0</strong></article><article class="stat-card"><span>Celkem kusů</span><strong id="statQty">0</strong></article><article class="stat-card"><span>Pod minimem</span><strong id="statLow">0</strong></article></section>
+  <nav class="main-nav"><button class="nav-btn active" data-view="stock">▦ Sklad</button><button class="nav-btn" data-view="in">＋ Naskladnění</button><button class="nav-btn" data-view="out">− Vyskladnění</button><button class="nav-btn" data-view="history">◷ Historie</button></nav>
+  <section id="stockView" class="view"><div class="toolbar"><div class="search-wrap"><span>⌕</span><input id="searchInput" type="search" placeholder="Hledat název, číslo, dodavatele…"></div><select id="stockFilter"><option value="all">Všechny položky</option><option value="in">Na skladě</option><option value="empty">Vyprodáno</option><option value="low">Pod minimálním množstvím</option></select></div>
+    <div class="table-wrap"><table><thead><tr><th>Název</th><th>Objednací číslo</th><th>Celkem</th><th>Minimum</th><th>Umístění</th><th>Dodavatel</th><th>Cena</th><th>Datum posledního naskladnění</th></tr></thead><tbody id="partsTable"></tbody></table></div><p class="table-note">Vyber řádek pro zobrazení karty a dostupných akcí.</p>
+  </section>
+  <section id="movementView" class="view hidden"><div class="panel movement-panel"><p class="eyebrow" id="movementEyebrow">POHYB MATERIÁLU</p><h2 id="movementTitle">Naskladnění</h2><p class="muted" id="movementDescription"></p><form id="movementForm" class="form-grid"><label class="field full"><span>Náhradní díl</span><select id="movementPart" required></select></label><label class="field full"><span>Umístění</span><select id="movementLocation" required></select></label><div id="newLocationFields" class="field full hidden"><span>Nové umístění</span><div class="new-location-inputs"><input id="newRack" placeholder="Regál"><input id="newBox" placeholder="Box"></div></div><label class="field"><span>Množství (ks)</span><input id="movementQty" type="number" min="1" step="1" value="1" required></label><p class="inline-error full" id="movementError"></p><div class="form-actions full"><button type="button" class="btn btn-light" id="cancelMovement">Zpět</button><button class="btn btn-primary" id="movementSubmit">Potvrdit</button></div></form></div></section>
+  <section id="historyView" class="view hidden"><div class="toolbar"><input id="historySearch" type="search" placeholder="Hledat uživatele, díl nebo umístění"><select id="historyFilter"><option value="all">Všechny pohyby</option><option value="in">Naskladnění</option><option value="out">Vyskladnění</option></select></div><div class="table-wrap"><table><thead><tr><th>Datum a čas</th><th>Uživatel</th><th>Díl</th><th>Pohyb</th><th>Umístění</th><th>Množství</th></tr></thead><tbody id="historyTable"></tbody></table></div></section>
+</main>
+<dialog id="partDialog" class="dialog"><form id="partForm"><div class="dialog-header"><div><p class="eyebrow">KARTA NÁHRADNÍHO DÍLU</p><h2 id="dialogTitle">Nová karta</h2></div><button type="button" class="icon-btn" id="closeDialog">×</button></div><input type="hidden" id="partId"><div class="form-grid">
+<label class="field full"><span>Název dílu *</span><input id="partName" required></label><label class="field"><span>Objednací číslo</span><input id="partNumber"></label><label class="field"><span>Interní ID</span><input id="partInternalId" readonly></label>
+<div class="field full"><span>Obrázek dílu</span><input id="partImage" type="file" accept="image/*"><img id="imagePreview" class="image-preview hidden" alt="Náhled obrázku"><small class="muted">Obrázek se uloží do složky images v soukromém repozitáři.</small></div>
+<div class="section-label full">Dodavatelé</div><div id="suppliers" class="supplier-list full"></div><button type="button" class="btn btn-light full" id="addSupplier">＋ Přidat dodavatele</button>
+<div class="section-label full">Interní informace</div><label class="field"><span>Interní karta</span><input id="partCard"></label><label class="field"><span>Středisko</span><input id="partCostCenter"></label><label class="field full"><span>Zařízení</span><input id="partMachine"></label><label class="field full"><span>Minimální množství (ks)</span><input id="partMinimum" type="number" min="0" step="1" value="0"></label><label class="field full"><span>Poznámka</span><textarea id="partNote" rows="3"></textarea></label>
+</div><div class="dialog-footer"><button type="button" class="btn btn-light" id="cancelPart">Zrušit</button><button type="submit" class="btn btn-primary">Uložit kartu</button></div></form></dialog>
+<dialog id="detailDialog" class="dialog"><div class="dialog-header"><div><p class="eyebrow">DETAIL NÁHRADNÍHO DÍLU</p><h2 id="detailTitle"></h2></div><button class="icon-btn" id="closeDetail">×</button></div><div id="detailContent"></div><div class="dialog-footer"><button class="btn btn-light" id="detailClose2">Zavřít</button><button class="btn btn-light" id="detailPrint">Tisk QR štítku</button><button class="btn btn-primary" id="detailEdit">Upravit</button></div></dialog>
+<dialog id="printDialog" class="dialog qr-dialog"><div class="label-preview" id="printLabel"><div id="printQr"></div></div><div class="dialog-footer"><button class="btn btn-light" id="closePrint">Zavřít</button><button class="btn btn-primary" id="printBtn">Tisk</button></div></dialog>
+<dialog id="settingsDialog" class="dialog"><form id="settingsForm"><div class="dialog-header"><div><p class="eyebrow">PŘIPOJENÍ A UŽIVATEL</p><h2>Nastavení</h2></div><button type="button" class="icon-btn" id="closeSettings">×</button></div><div class="form-grid">
+<label class="field"><span>Jméno</span><input id="userFirst" required></label><label class="field"><span>Příjmení</span><input id="userLast" required></label><label class="field full"><span>GitHub – vlastník repozitáře</span><input id="repoOwner" placeholder="PepikVaio" required></label><label class="field full"><span>Název soukromého repozitáře</span><input id="repoName" placeholder="Skladova_data" required></label><label class="field full"><span>Přístupový klíč (GitHub token)</span><input id="accessToken" type="password" autocomplete="off" placeholder="github_pat_…" required></label><label class="field full"><span>Typ přístupu</span><select id="accessMode"><option value="read">Pouze prohlížení</option><option value="write">Správa – čtení a zápis</option></select></label><p class="muted full">Čtenářský klíč potřebuje Contents: Read. Správcovský klíč potřebuje Contents: Read and write. Typ přístupu v aplikaci pouze přepíná nabídku; skutečná oprávnění vždy vynucuje GitHub.</p><div class="full" id="connectionStatus"></div></div><div class="dialog-footer"><button type="button" class="btn btn-light" id="testConnection">Ověřit připojení</button><button type="button" class="btn btn-light" id="closeSettings2">Zavřít</button><button type="submit" class="btn btn-primary">Uložit nastavení</button></div></form></dialog>
+<div class="toast" id="toast" role="status"></div>
+</body></html>

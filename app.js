@@ -1,182 +1,66 @@
-const DATA_URL = "./data.json";
-const STORAGE_KEY = "sklad-prototype-data-v1";
-let parts = [];
-let movementMode = "in";
-let selectedPartId = null;
-
+const PROFILE_KEY = "sklad-profile-v1";
 const $ = id => document.getElementById(id);
-const total = p => (p.locations || []).reduce((n, x) => n + Number(x.qty || 0), 0);
-const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let parts = [], historyItems = [], selectedPartId = null, movementMode = "in", currentDetailId = null;
+let fileState = { data: null, history: null };
+let currentImageData = null;
+const total = p => (p.locations || []).reduce((n,l)=>n + (Number(l.qty)||0),0);
+const today = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const dateText = d => d ? new Date(`${d}T00:00:00`).toLocaleDateString("cs-CZ") : "—";
+const dateTimeText = d => d ? new Date(d).toLocaleString("cs-CZ") : "—";
+const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const profile = () => { try { return JSON.parse(localStorage.getItem(PROFILE_KEY)||"{}"); } catch { return {}; } };
+const isConfigured = p => !!(p.owner && p.repo && p.token);
+const isWriter = () => profile().access === "write";
 
-async function init() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) parts = JSON.parse(saved);
-    else {
-      const res = await fetch(DATA_URL);
-      if (!res.ok) throw new Error("Nepodařilo se načíst data.json");
-      parts = await res.json().then(x => x.parts || []);
-    }
-  } catch (e) {
-    console.error(e);
-    parts = [];
-    toast("Data se nepodařilo načíst. Zkontroluj data.json.");
-  }
-  bind();
-  render();
+async function init(){ bind(); const p=profile(); fillSettings(p); if(isConfigured(p)){ try{ await loadAll(); }catch(e){ setState("Chyba připojení"); toast(e.message); } } else { setState("Nastav připojení"); openSettings(); } render(); }
+function bind(){
+  $("settingsBtn").onclick=openSettings; $("closeSettings").onclick=$("closeSettings2").onclick=()=>$("settingsDialog").close();
+  $("settingsForm").onsubmit=saveSettings; $("testConnection").onclick=testConnection; $("refreshBtn").onclick=refresh;
+  $("newPartBtn").onclick=()=>{ if(requireWriter())openPart(); };
+  $("closeDialog").onclick=$("cancelPart").onclick=()=>$("partDialog").close(); $("partForm").onsubmit=savePart;
+  $("addSupplier").onclick=()=>addSupplierRow(); $("partImage").onchange=previewImage;
+  $("searchInput").oninput=render; $("stockFilter").onchange=render;
+  document.querySelectorAll(".nav-btn").forEach(b=>b.onclick=()=>switchView(b.dataset.view));
+  $("movementForm").onsubmit=saveMovement; $("cancelMovement").onclick=()=>switchView("stock"); $("movementPart").onchange=updateMovementLocations;
+  $("movementLocation").onchange=()=>$("newLocationFields").classList.toggle("hidden",$("movementLocation").value!=="new");
+  $("closeDetail").onclick=$("detailClose2").onclick=()=>$("detailDialog").close(); $("detailEdit").onclick=()=>{const id=currentDetailId;$("detailDialog").close();if(requireWriter())openPart(id);};
+  $("detailPrint").onclick=()=>showPrint(currentDetailId); $("closePrint").onclick=()=>$("printDialog").close(); $("printBtn").onclick=()=>window.print();
+  $("historySearch").oninput=renderHistory; $("historyFilter").onchange=renderHistory;
 }
-function persist() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(parts));
-  $("saveState").textContent = "Uloženo v tomto prohlížeči";
-  render();
-}
-function bind() {
-  $("newPartBtn").onclick = () => openPart();
-  $("closeDialog").onclick = closePart;
-  $("cancelPart").onclick = closePart;
-  $("partForm").onsubmit = savePart;
-  $("addSupplier").onclick = () => addSupplierRow();
-  $("addLocation").onclick = () => addLocationRow();
-  $("searchInput").oninput = render;
-  $("stockFilter").onchange = render;
-  document.querySelectorAll(".nav-btn").forEach(b => b.onclick = () => switchView(b.dataset.view));
-  $("movementForm").onsubmit = saveMovement;
-  $("cancelMovement").onclick = () => switchView("stock");
-  $("movementPart").onchange = updateMovementLocations;
-  $("movementLocation").onchange = () => $("newLocationFields").classList.toggle("hidden", $("movementLocation").value !== "new");
-  $("closeQr").onclick = $("closeQr2").onclick = () => $("qrDialog").close();
-  $("printBtn").onclick = () => window.print();
-}
-function switchView(view) {
-  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.view === view));
-  $("stockView").classList.toggle("hidden", view !== "stock");
-  $("movementView").classList.toggle("hidden", view !== "in" && view !== "out");
-  if (view === "in" || view === "out") {
-    movementMode = view;
-    $("movementEyebrow").textContent = view === "in" ? "PŘÍJEM MATERIÁLU" : "VÝDEJ MATERIÁLU";
-    $("movementTitle").textContent = view === "in" ? "Naskladnění" : "Vyskladnění";
-    $("movementDescription").textContent = view === "in" ? "Vyber díl, umístění a množství, které přidáváš." : "Vyber díl, umístění a množství, které vydáváš.";
-    $("movementSubmit").textContent = view === "in" ? "Potvrdit naskladnění" : "Potvrdit vyskladnění";
-    $("movementError").textContent = "";
-    $("movementPart").innerHTML = `<option value="">Vyber náhradní díl</option>` + parts.map(p => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.id)})</option>`).join("");
-    $("movementPart").value = selectedPartId && parts.some(p => p.id === selectedPartId) ? selectedPartId : "";
-    updateMovementLocations();
-  }
-}
-function render() {
-  const q = $("searchInput").value.toLocaleLowerCase("cs-CZ");
-  const f = $("stockFilter").value;
-  const filtered = parts.filter(p => {
-    const text = [p.name,p.partNumber,p.id,p.internalCard,p.costCenter,p.machine,p.note,...(p.suppliers||[]).flatMap(s=>[s.name,s.price])].join(" ").toLocaleLowerCase("cs-CZ");
-    const qty = total(p);
-    return text.includes(q) && (f === "all" || (f === "in" && qty > 0) || (f === "empty" && qty === 0));
-  });
-  $("partsTable").innerHTML = filtered.map(p => {
-    const locs = (p.locations||[]).map(l => `Regál ${esc(l.rack)} / Box ${esc(l.box)} (${Number(l.qty)||0})`).join("<br>");
-    const s = (p.suppliers||[])[0] || {};
-    const qty = total(p);
-    return `<tr data-select="${esc(p.id)}" class="${selectedPartId===p.id ? "selected" : ""}">
-      <td><span class="part-name">${esc(p.name)}</span><br><small>${esc(p.id)}</small></td>
-      <td>${esc(p.partNumber)}</td><td>${p.stockedAt ? new Date(p.stockedAt + "T00:00:00").toLocaleDateString("cs-CZ") : "—"}</td><td class="qty ${qty===0?'zero':''}">${qty} ks</td>
-      <td>${locs || "—"}</td><td>${esc(s.name||"—")}</td><td>${esc(s.price||"—")}</td>
-      <td>${esc(p.internalCard||"—")}</td><td>${esc(p.costCenter||"—")}</td><td>${esc(p.machine||"—")}</td>
-      <td><div class="actions"><button class="mini-btn" data-edit="${esc(p.id)}">Upravit</button><button class="mini-btn" data-qr="${esc(p.id)}">QR</button></div></td>
-    </tr>`;
-  }).join("") || `<tr><td colspan="11">Žádné položky neodpovídají filtru.</td></tr>`;
-  $("partsTable").querySelectorAll("[data-select]").forEach(r => r.onclick = e => { if (e.target.closest("button")) return; selectedPartId = r.dataset.select; render(); });
-  $("partsTable").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openPart(b.dataset.edit));
-  $("partsTable").querySelectorAll("[data-qr]").forEach(b => b.onclick = () => showQr(b.dataset.qr));
-  $("statParts").textContent = parts.length;
-  $("statQty").textContent = parts.reduce((n,p)=>n+total(p),0);
-  $("statEmpty").textContent = parts.filter(p=>total(p)===0).length;
-}
-function openPart(id) {
-  const p = parts.find(x=>x.id===id);
-  $("partForm").reset();
-  $("partId").value = p?.id || "";
-  $("partCreatedAt").value = p ? (p.stockedAt || "") : "";
-  $("dialogTitle").textContent = p ? "Upravit kartu" : "Nová karta";
-  $("partName").value = p?.name || "";
-  $("partNumber").value = p?.partNumber || "";
-  $("partInternalId").value = p?.id || nextId();
-  $("partCard").value = p?.internalCard || "";
-  $("partCostCenter").value = p?.costCenter || "";
-  $("partMachine").value = p?.machine || "";
-  $("partNote").value = p?.note || "";
-  $("suppliers").innerHTML = "";
-  $("locations").innerHTML = "";
-  (p?.suppliers?.length ? p.suppliers : [{name:"",price:""}]).forEach(addSupplierRow);
-  (p?.locations?.length ? p.locations : [{rack:"",box:"",qty:0}]).forEach(addLocationRow);
-  $("qrCode").innerHTML = "";
-  makeQr($("qrCode"), p?.id || $("partInternalId").value, 88);
-  $("partDialog").showModal();
-}
-function closePart(){ $("partDialog").close(); }
-function nextId() {
-  const max = parts.reduce((m,p)=>Math.max(m,Number((p.id||"").replace("ND-",""))||0),0);
-  return "ND-" + String(max+1).padStart(5,"0");
-}
-function addSupplierRow(s={name:"",price:""}) {
-  const row = document.createElement("div"); row.className="supplier-row";
-  row.innerHTML = `<input aria-label="Dodavatel" placeholder="Název dodavatele" value="${esc(s.name)}"><input aria-label="Cena" placeholder="Např. 125 Kč" value="${esc(s.price)}"><button type="button" class="remove-btn" aria-label="Odebrat">×</button>`;
-  row.querySelector("button").onclick=()=>row.remove(); $("suppliers").append(row);
-}
-function addLocationRow(l={rack:"",box:"",qty:0}) {
-  const row=document.createElement("div");row.className="location-row";
-  row.innerHTML=`<input aria-label="Regál" placeholder="Regál" value="${esc(l.rack)}"><input aria-label="Box" placeholder="Box" value="${esc(l.box)}"><input aria-label="Množství" type="number" min="0" step="1" value="${Number(l.qty)||0}"><button type="button" class="remove-btn" aria-label="Odebrat">×</button>`;
-  row.querySelector("button").onclick=()=>row.remove();$("locations").append(row);
-}
-function savePart(e) {
-  e.preventDefault();
-  const id=$("partId").value || $("partInternalId").value;
-  const existing=parts.find(x=>x.id===id);
-  const locations=[...$("locations").children].map(r=>({rack:r.children[0].value.trim(),box:r.children[1].value.trim(),qty:Math.max(0,Number(r.children[2].value)||0)})).filter(x=>x.rack||x.box||x.qty>0);
-  const p={id,stockedAt:existing ? (existing.stockedAt || "") : (locations.some(x=>x.qty>0) ? today() : ""),name:$("partName").value.trim(),partNumber:$("partNumber").value.trim(),internalCard:$("partCard").value.trim(),costCenter:$("partCostCenter").value.trim(),machine:$("partMachine").value.trim(),note:$("partNote").value.trim(),
-    suppliers:[...$("suppliers").children].map(r=>({name:r.children[0].value.trim(),price:r.children[1].value.trim()})).filter(x=>x.name||x.price),
-    locations};
-  const idx=parts.findIndex(x=>x.id===id); if(idx>=0)parts[idx]=p;else parts.push(p);
-  persist();closePart();toast("Karta byla uložena.");
-}
-function updateMovementLocations() {
-  const p=parts.find(x=>x.id===$("movementPart").value);
-  $("newLocationFields").classList.add("hidden");
-  if (!p) { $("movementLocation").innerHTML = '<option value="">Nejdříve vyber díl</option>'; return; }
-  $("movementLocation").innerHTML=(p.locations||[]).map((l,i)=>`<option value="${i}">Regál ${esc(l.rack)} / Box ${esc(l.box)} – ${l.qty} ks</option>`).join("");
-  if (movementMode === "in") $("movementLocation").innerHTML += '<option value="new">＋ Zadat nové umístění</option>';
-  if (!p.locations?.length) $("movementLocation").value = movementMode === "in" ? "new" : "";
-  if ($( "movementLocation").value === "new") $("newLocationFields").classList.remove("hidden");
-}
-function saveMovement(e) {
-  e.preventDefault();
-  const p=parts.find(x=>x.id===$("movementPart").value), locationValue=$("movementLocation").value, i=Number(locationValue), qty=Number($("movementQty").value);
-  $("movementError").textContent="";
-  if(!p) { $("movementError").textContent="Vyber náhradní díl.";return; }
-  if(!Number.isInteger(qty)||qty<1){$("movementError").textContent="Zadej celé kladné množství.";return;}
-  if(locationValue === "new") {
-    const rack=$("newRack").value.trim(), box=$("newBox").value.trim();
-    if(movementMode !== "in" || !rack || !box) { $("movementError").textContent="Vyplň regál a box nového umístění.";return; }
-    p.locations ||= [];
-    const existingIndex=p.locations.findIndex(l=>l.rack.toLocaleLowerCase("cs-CZ")===rack.toLocaleLowerCase("cs-CZ") && l.box.toLocaleLowerCase("cs-CZ")===box.toLocaleLowerCase("cs-CZ"));
-    if(existingIndex>=0) p.locations[existingIndex].qty += qty; else p.locations.push({rack,box,qty});
-    p.stockedAt = today();
-    persist(); $("movementQty").value=1; $("newRack").value=""; $("newBox").value=""; toast("Materiál byl naskladněn do nového umístění."); switchView("stock"); return;
-  }
-  if(!p.locations?.[i]) { $("movementError").textContent="Vyber platné umístění.";return; }
-  if(movementMode==="out" && p.locations[i].qty<qty){$("movementError").textContent="Na vybraném místě není dostatečné množství.";return;}
-  p.locations[i].qty += movementMode==="in" ? qty : -qty;
-  if(movementMode==="in") p.stockedAt = today();
-  persist();$("movementQty").value=1;toast(movementMode==="in"?"Materiál byl naskladněn.":"Materiál byl vyskladněn.");switchView("stock");
-}
-function makeQr(target,text,size) {
-  target.innerHTML="";
-  if(window.QRCode) new QRCode(target,{text:String(text),width:size,height:size,correctLevel:QRCode.CorrectLevel.M});
-  else target.innerHTML='<span class="muted small">QR knihovna není dostupná</span>';
-}
-function showQr(id) {
-  const p=parts.find(x=>x.id===id); if(!p)return;
-  $("printName").textContent=p.name;$("printNumber").textContent=p.partNumber||"";$("printId").textContent=p.id;
-  makeQr($("printQr"),p.id,112);$("qrDialog").showModal();
-}
-function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2300);}
+function setState(s){$("saveState").textContent=s;}
+function toast(s){const t=$("toast");t.textContent=s;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2800);}
+function requireWriter(){if(!isConfigured(profile())){openSettings();toast("Nejdříve nastav připojení ke skladu.");return false;}if(!isWriter()){toast("Tento přístupový klíč umožňuje pouze prohlížení.");return false;}return true;}
+function fillSettings(p){$("userFirst").value=p.firstName||"";$("userLast").value=p.lastName||"";$("repoOwner").value=p.owner||"";$("repoName").value=p.repo||"";$("accessToken").value=p.token||"";$("accessMode").value=p.access||"read";}
+function openSettings(){fillSettings(profile());$("connectionStatus").textContent="";$("settingsDialog").showModal();}
+function saveSettings(e){e.preventDefault();const old=profile();const p={firstName:$("userFirst").value.trim(),lastName:$("userLast").value.trim(),owner:$("repoOwner").value.trim(),repo:$("repoName").value.trim(),token:$("accessToken").value.trim(),access:$("accessMode").value,branch:old.branch||"main"};localStorage.setItem(PROFILE_KEY,JSON.stringify(p));$("settingsDialog").close();loadAll().then(()=>toast("Připojení bylo uloženo.")).catch(e=>{setState("Chyba připojení");toast(e.message);openSettings();$("connectionStatus").textContent=e.message;});}
+function apiHeaders(){const p=profile();return {"Accept":"application/vnd.github+json","Authorization":`Bearer ${p.token}`,"X-GitHub-Api-Version":"2022-11-28","Content-Type":"application/json"};}
+function apiUrl(path){const p=profile();return `https://api.github.com/repos/${encodeURIComponent(p.owner)}/${encodeURIComponent(p.repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}`;}
+async function apiGet(path){const r=await fetch(apiUrl(path),{headers:apiHeaders()});if(r.status===404)return null;const j=await r.json();if(!r.ok)throw new Error(j.message||`GitHub API: ${r.status}`);return j;}
+function decodeContent(s){const binary=atob(s.replace(/\n/g,""));const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));return new TextDecoder().decode(bytes);}
+function encodeContent(s){const bytes=new TextEncoder().encode(s);let binary="";bytes.forEach(b=>binary+=String.fromCharCode(b));return btoa(binary);}
+async function readJson(path,fallback){const f=await apiGet(path);if(!f)return {value:fallback,sha:null};return {value:JSON.parse(decodeContent(f.content)),sha:f.sha};}
+async function loadAll(){setState("Načítám GitHub…");const [d,h]=await Promise.all([readJson("data.json",{parts:[]}),readJson("history.json",{items:[]})]);parts=(d.value.parts||[]).map(p=>({...p,locations:(p.locations||[]).map(l=>({...l,stockedAt:l.stockedAt||p.stockedAt||""}))}));historyItems=h.value.items||[];fileState={data:d.sha,history:h.sha};setState(`GitHub · ${isWriter()?"Správa":"Prohlížení"}`);applyPermissions();render();}
+async function testConnection(){try{const p=profileFromForm();if(!isConfigured(p))throw new Error("Vyplň vlastníka, repozitář a token.");const r=await fetch(`https://api.github.com/repos/${encodeURIComponent(p.owner)}/${encodeURIComponent(p.repo)}`,{headers:{Accept:"application/vnd.github+json",Authorization:`Bearer ${p.token}`,"X-GitHub-Api-Version":"2022-11-28"}});const j=await r.json();if(!r.ok)throw new Error(j.message||`GitHub API: ${r.status}`);$("connectionStatus").textContent=`Připojení funguje. Repozitář: ${j.full_name}.`; }catch(e){$("connectionStatus").textContent=`Chyba: ${e.message}`;}}
+function profileFromForm(){return {owner:$("repoOwner").value.trim(),repo:$("repoName").value.trim(),token:$("accessToken").value.trim()};}
+async function refresh(){try{await loadAll();toast("Data byla obnovena.");}catch(e){toast(e.message);}}
+async function writeFile(path,content,expectedSha){const current=await apiGet(path);if((current?.sha||null)!==(expectedSha||null))throw new Error(`Soubor ${path} byl mezitím změněn. Obnov data a opakuj akci.`);const body={message:`Aktualizace ${path}`,content:encodeContent(content),branch:profile().branch||"main"};if(current?.sha)body.sha=current.sha;const r=await fetch(apiUrl(path),{method:"PUT",headers:apiHeaders(),body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.message||`Zápis ${path} selhal (${r.status}).`);return j.content?.sha||null;}
+async function commitAll(newParts,newHistory){setState("Ukládám na GitHub…");const dataSha=await writeFile("data.json",JSON.stringify({parts:newParts},null,2),fileState.data);fileState.data=dataSha;try{const historySha=await writeFile("history.json",JSON.stringify({items:newHistory},null,2),fileState.history);fileState.history=historySha;}catch(e){await loadAll();throw new Error(`Sklad byl uložen, ale historii se nepodařilo uložit: ${e.message}`);}parts=newParts;historyItems=newHistory;setState(`GitHub · ${isWriter()?"Správa":"Prohlížení"}`);applyPermissions();render();}
+async function uploadImage(file,id){const optimized=await optimizeImage(file);const path=`images/${id}.jpg`;const current=await apiGet(path);const body={message:`Nahrání obrázku ${id}`,content:optimized,branch:profile().branch||"main"};if(current?.sha)body.sha=current.sha;const r=await fetch(apiUrl(path),{method:"PUT",headers:apiHeaders(),body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.message||"Obrázek se nepodařilo nahrát.");return path;}
+function applyPermissions(){const writer=isWriter();$("newPartBtn").classList.toggle("hidden",!writer);document.querySelectorAll('.nav-btn[data-view="in"],.nav-btn[data-view="out"]').forEach(b=>b.classList.toggle("hidden",!writer));}
+function switchView(view){if((view==="in"||view==="out")&&!requireWriter())return;document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$("stockView").classList.toggle("hidden",view!=="stock");$("movementView").classList.toggle("hidden",view!=="in"&&view!=="out");$("historyView").classList.toggle("hidden",view!=="history");$("pageTitle").textContent=({stock:"Přehled skladu",in:"Naskladnění",out:"Vyskladnění",history:"Historie pohybů"})[view];if(view==="in"||view==="out"){movementMode=view;$("movementEyebrow").textContent=view==="in"?"PŘÍJEM MATERIÁLU":"VÝDEJ MATERIÁLU";$("movementTitle").textContent=view==="in"?"Naskladnění":"Vyskladnění";$("movementDescription").textContent=view==="in"?"Vyber díl a umístění, kam materiál ukládáš.":"Vyber díl a umístění, odkud materiál vydáváš.";$("movementSubmit").textContent=view==="in"?"Potvrdit naskladnění":"Potvrdit vyskladnění";$("movementPart").innerHTML='<option value="">Vyber náhradní díl</option>'+parts.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.id)})</option>`).join("");$("movementPart").value=selectedPartId||"";updateMovementLocations();}if(view==="history")renderHistory();}
+function render(){const q=$("searchInput").value.toLocaleLowerCase("cs-CZ"),f=$("stockFilter").value;const filtered=parts.filter(p=>{const t=[p.name,p.partNumber,p.id,p.internalCard,p.costCenter,p.machine,p.note,...(p.suppliers||[]).flatMap(s=>[s.name,s.price])].join(" ").toLocaleLowerCase("cs-CZ"),qty=total(p),min=Number(p.minimumQty)||0;return t.includes(q)&&(f==="all"||(f==="in"&&qty>0)||(f==="empty"&&qty===0)||(f==="low"&&min>0&&qty<min));});
+$("partsTable").innerHTML=filtered.map(p=>{const qty=total(p),min=Number(p.minimumQty)||0,s=p.suppliers?.[0]||{},loc=(p.locations||[]).map(l=>`${esc(l.rack)} / ${esc(l.box)} (${Number(l.qty)||0})`).join("<br>");const dates=(p.locations||[]).filter(l=>l.stockedAt).map(l=>dateText(l.stockedAt)).join(", ")||"—";return `<tr data-id="${esc(p.id)}" class="${selectedPartId===p.id?"selected":""} ${min>0&&qty<min?"below-minimum":""}"><td><strong>${esc(p.name)}</strong><br><small>${esc(p.id)}</small></td><td>${esc(p.partNumber||"—")}</td><td class="qty ${qty===0?"zero":""}">${qty} ks</td><td>${min||"—"}</td><td>${loc||"—"}</td><td>${esc(s.name||"—")}</td><td>${esc(s.price||"—")}</td><td>${dates}</td></tr>`;}).join("")||'<tr><td colspan="8">Žádné položky neodpovídají filtru.</td></tr>';
+$("partsTable").querySelectorAll("tr[data-id]").forEach(r=>r.onclick=()=>{selectedPartId=r.dataset.id;showDetail(r.dataset.id);render();});$("statParts").textContent=parts.length;$("statQty").textContent=parts.reduce((n,p)=>n+total(p),0);$("statLow").textContent=parts.filter(p=>(Number(p.minimumQty)||0)>0&&total(p)<Number(p.minimumQty)).length;}
+function renderHistory(){const q=$("historySearch").value.toLocaleLowerCase("cs-CZ"),f=$("historyFilter").value;const rows=historyItems.filter(h=>(f==="all"||h.type===f)&&[h.user,h.partName,h.partId,h.location,h.type].join(" ").toLocaleLowerCase("cs-CZ").includes(q)).slice().reverse();$("historyTable").innerHTML=rows.map(h=>`<tr><td>${dateTimeText(h.at)}</td><td>${esc(h.user||"—")}</td><td>${esc(h.partName)}<br><small>${esc(h.partId)}</small></td><td>${h.type==="in"?"Naskladnění":"Vyskladnění"}</td><td>${esc(h.location)}</td><td class="qty">${h.type==="in"?"+":"−"}${h.qty} ks</td></tr>`).join("")||'<tr><td colspan="6">Historie je prázdná.</td></tr>';}
+function nextId(){return "ND-"+String(parts.reduce((m,p)=>Math.max(m,Number((p.id||"").replace("ND-",""))||0),0)+1).padStart(5,"0");}
+function addSupplierRow(s={name:"",price:""}){const row=document.createElement("div");row.className="supplier-row";row.innerHTML=`<input placeholder="Název dodavatele" value="${esc(s.name)}"><input placeholder="Např. 125 Kč" value="${esc(s.price)}"><button type="button" class="remove-btn">×</button>`;row.querySelector("button").onclick=()=>row.remove();$("suppliers").append(row);}
+function openPart(id){const p=parts.find(x=>x.id===id);currentImageData=null;$("partForm").reset();$("partId").value=p?.id||"";$("dialogTitle").textContent=p?"Upravit kartu":"Nová karta";$("partName").value=p?.name||"";$("partNumber").value=p?.partNumber||"";$("partInternalId").value=p?.id||nextId();$("partCard").value=p?.internalCard||"";$("partCostCenter").value=p?.costCenter||"";$("partMachine").value=p?.machine||"";$("partMinimum").value=p?.minimumQty??0;$("partNote").value=p?.note||"";$("suppliers").innerHTML="";(p?.suppliers?.length?p.suppliers:[{name:"",price:""}]).forEach(addSupplierRow);$("imagePreview").classList.toggle("hidden",!p?.image);if(p?.image){githubImageData(p.image).then(src=>{$("imagePreview").src=src;}).catch(()=>{});}$("partDialog").showModal();}
+async function githubImageData(path){const f=await apiGet(path);if(!f?.content)throw new Error("Obrázek se nepodařilo načíst z GitHubu.");const ext=(path.split(".").pop()||"jpg").toLowerCase();const mime=ext==="png"?"image/png":ext==="webp"?"image/webp":ext==="gif"?"image/gif":"image/jpeg";return `data:${mime};base64,${f.content.replace(/\n/g,"")}`;}
+async function optimizeImage(file){const bitmap=await createImageBitmap(file);const scale=Math.min(1,1200/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement("canvas");canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);const data=canvas.toDataURL("image/jpeg",0.78).split(",")[1];if(data.length>1300000)throw new Error("Obrázek je i po zmenšení příliš velký. Vyber menší obrázek.");return data;}
+function previewImage(e){const f=e.target.files?.[0];if(!f)return;if(!f.type.startsWith("image/")){toast("Vyber obrázek.");return;}currentImageData=f;$("imagePreview").src=URL.createObjectURL(f);$("imagePreview").classList.remove("hidden");}
+async function savePart(e){e.preventDefault();if(!requireWriter())return;const id=$("partId").value||$("partInternalId").value,old=parts.find(p=>p.id===id);const p={...(old||{}),id,name:$("partName").value.trim(),partNumber:$("partNumber").value.trim(),internalCard:$("partCard").value.trim(),costCenter:$("partCostCenter").value.trim(),machine:$("partMachine").value.trim(),minimumQty:Math.max(0,Number($("partMinimum").value)||0),note:$("partNote").value.trim(),suppliers:[...$("suppliers").children].map(r=>({name:r.children[0].value.trim(),price:r.children[1].value.trim()})).filter(s=>s.name||s.price),locations:old?.locations||[]};try{if(currentImageData){setState("Nahrávám obrázek…");p.image=await uploadImage(currentImageData,id);}const next=parts.slice(),i=next.findIndex(x=>x.id===id);if(i>=0)next[i]=p;else next.push(p);await commitAll(next,historyItems);$("partDialog").close();toast("Karta byla uložena do GitHubu.");}catch(err){toast(err.message);setState("Chyba ukládání");}}
+function updateMovementLocations(){const p=parts.find(x=>x.id===$("movementPart").value);$("newLocationFields").classList.add("hidden");if(!p){$("movementLocation").innerHTML='<option value="">Nejdříve vyber díl</option>';return;}$("movementLocation").innerHTML=(p.locations||[]).map((l,i)=>`<option value="${i}">${esc(l.rack)} / ${esc(l.box)} – ${l.qty} ks</option>`).join("");if(movementMode==="in")$("movementLocation").innerHTML+='<option value="new">＋ Zadat nové umístění</option>';if(!p.locations?.length)$("movementLocation").value=movementMode==="in"?"new":"";if($("movementLocation").value==="new")$("newLocationFields").classList.remove("hidden");}
+async function saveMovement(e){e.preventDefault();if(!requireWriter())return;const p=parts.find(x=>x.id===$("movementPart").value),v=$("movementLocation").value,qty=Number($("movementQty").value);$("movementError").textContent="";if(!p){$("movementError").textContent="Vyber náhradní díl.";return;}if(!Number.isInteger(qty)||qty<1){$("movementError").textContent="Zadej celé kladné množství.";return;}let loc=null;if(v==="new"){const rack=$("newRack").value.trim(),box=$("newBox").value.trim();if(movementMode!=="in"||!rack||!box){$("movementError").textContent="Vyplň regál a box.";return;}let idx=p.locations.findIndex(l=>l.rack.toLowerCase()===rack.toLowerCase()&&l.box.toLowerCase()===box.toLowerCase());if(idx<0){p.locations.push({rack,box,qty:0,stockedAt:""});idx=p.locations.length-1;}loc=p.locations[idx];}else loc=p.locations[Number(v)];if(!loc){$("movementError").textContent="Vyber platné umístění.";return;}if(movementMode==="out"&&loc.qty<qty){$("movementError").textContent="Na vybraném místě není dostatečné množství.";return;}loc.qty=Number(loc.qty||0)+(movementMode==="in"?qty:-qty);if(movementMode==="in")loc.stockedAt=today();const user=`${profile().firstName||""} ${profile().lastName||""}`.trim()||"Neznámý uživatel";const h={at:new Date().toISOString(),user,type:movementMode,partId:p.id,partName:p.name,location:`${loc.rack} / ${loc.box}`,qty};try{await commitAll(parts.map(x=>({...x,locations:(x.locations||[]).map(l=>({...l}))})),[...historyItems,h]);$("movementQty").value=1;$("newRack").value=$("newBox").value="";toast(movementMode==="in"?"Naskladnění uloženo.":"Vyskladnění uloženo.");switchView("stock");}catch(err){toast(err.message);setState("Chyba ukládání");}}
+function showDetail(id){const p=parts.find(x=>x.id===id);if(!p)return;currentDetailId=id;$("detailTitle").textContent=p.name;const qty=total(p),min=Number(p.minimumQty)||0;const image=p.image?`<img class="detail-image" id="detailImage" alt="${esc(p.name)}">`:"";const locs=(p.locations||[]).map(l=>`<tr><td>${esc(l.rack)} / ${esc(l.box)}</td><td>${Number(l.qty)||0} ks</td><td>${dateText(l.stockedAt)}</td></tr>`).join("");$("detailContent").innerHTML=`<div class="detail-top">${image}<div><p><strong>Interní ID:</strong> ${esc(p.id)}</p><p><strong>Objednací číslo:</strong> ${esc(p.partNumber||"—")}</p><p><strong>Celkové množství:</strong> ${qty} ks</p><p><strong>Minimální množství:</strong> ${min||"—"}</p>${min>0&&qty<min?'<p class="warning-text">Pod minimálním množstvím</p>':""}<p><strong>Interní karta:</strong> ${esc(p.internalCard||"—")}</p><p><strong>Středisko:</strong> ${esc(p.costCenter||"—")}</p><p><strong>Zařízení:</strong> ${esc(p.machine||"—")}</p><p><strong>Poznámka:</strong> ${esc(p.note||"—")}</p></div></div><h3>Dodavatelé</h3><ul>${(p.suppliers||[]).map(s=>`<li>${esc(s.name)} – ${esc(s.price)}</li>`).join("")||"<li>—</li>"}</ul><h3>Umístění</h3><div class="table-wrap"><table><thead><tr><th>Umístění</th><th>Množství</th><th>Datum naskladnění</th></tr></thead><tbody>${locs||'<tr><td colspan="3">Zatím bez umístění.</td></tr>'}</tbody></table></div>`;$("detailEdit").classList.toggle("hidden",!isWriter());$("detailDialog").showModal();if(p.image)githubImageData(p.image).then(src=>{const el=$("detailImage");if(el)el.src=src;}).catch(()=>{});}
+function showPrint(id){const p=parts.find(x=>x.id===id);if(!p)return;$("printQr").innerHTML="";if(window.QRCode)new QRCode($("printQr"),{text:p.id,width:190,height:190,correctLevel:QRCode.CorrectLevel.M});else $("printQr").textContent=p.id;$("printDialog").showModal();}
 init();
