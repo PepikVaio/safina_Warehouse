@@ -21,3 +21,6 @@ button:disabled,.permission-disabled:disabled{opacity:.42!important;cursor:not-a
 #connectionStatus{font-size:12px;white-space:pre-line;color:#475467}
 .settings-grid{margin-top:14px}
 @media(max-width:760px){.topbar{height:auto;min-height:64px;padding:10px 12px}.top-actions{gap:7px;flex-wrap:wrap;justify-content:flex-end}.user-identity{width:100%;text-align:right;font-size:11px}.top-actions .btn{font-size:11px;padding:8px 9px}.detail-top{grid-template-columns:1fr}.detail-image{max-height:220px}.detail-footer{align-items:stretch}.detail-footer-left,.detail-footer-right{width:100%;justify-content:space-between}.detail-footer-left .btn,.detail-footer-right .btn{flex:1}.admin-test{display:grid}.admin-test .btn{width:100%}}
+
+/* Prevent iOS Safari from automatically zooming the whole page when a small-text form control receives focus. Pinch zoom remains available. */
+@media (max-width:760px){input,select,textarea{font-size:16px!important}}
