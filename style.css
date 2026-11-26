@@ -7,3 +7,17 @@ tbody tr{cursor:pointer}tbody tr.selected{background:#eaf1ff}tbody tr.selected:h
 /* Ovládací prvky bez oprávnění k zápisu zůstávají viditelné, ale jsou neaktivní. */
 button:disabled,.permission-disabled:disabled{opacity:.42!important;cursor:not-allowed!important;filter:grayscale(1)}
 .nav-btn:disabled{color:#9aa3b2;border-bottom-color:transparent}
+
+/* Úpravy rozhraní v9 */
+.user-identity{font-size:12px;color:#e5eaf2;white-space:nowrap}
+.detail-footer{justify-content:space-between;align-items:center;flex-wrap:wrap}
+.detail-footer-left,.detail-footer-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.detail-top{display:grid;grid-template-columns:minmax(180px,280px) 1fr;gap:20px;align-items:start;margin:18px 0}
+.detail-image{display:block;width:100%;max-height:260px;object-fit:contain;background:#f8fafc;border:1px solid #e6eaf0;border-radius:10px;cursor:default}
+#detailContent h3{margin:22px 0 10px;font-size:15px}
+#detailContent p{margin:0 0 9px;font-size:13px}
+.admin-tools{border:1px solid #e4e9f0;background:#f8fafc;border-radius:10px;padding:14px;display:grid;gap:13px}
+.admin-test{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+#connectionStatus{font-size:12px;white-space:pre-line;color:#475467}
+.settings-grid{margin-top:14px}
+@media(max-width:760px){.topbar{height:auto;min-height:64px;padding:10px 12px}.top-actions{gap:7px;flex-wrap:wrap;justify-content:flex-end}.user-identity{width:100%;text-align:right;font-size:11px}.top-actions .btn{font-size:11px;padding:8px 9px}.detail-top{grid-template-columns:1fr}.detail-image{max-height:220px}.detail-footer{align-items:stretch}.detail-footer-left,.detail-footer-right{width:100%;justify-content:space-between}.detail-footer-left .btn,.detail-footer-right .btn{flex:1}.admin-test{display:grid}.admin-test .btn{width:100%}}
