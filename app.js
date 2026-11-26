@@ -2,9 +2,11 @@ const DATA_URL = "./data.json";
 const STORAGE_KEY = "sklad-prototype-data-v1";
 let parts = [];
 let movementMode = "in";
+let selectedPartId = null;
 
 const $ = id => document.getElementById(id);
 const total = p => (p.locations || []).reduce((n, x) => n + Number(x.qty || 0), 0);
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 async function init() {
@@ -42,6 +44,7 @@ function bind() {
   $("movementForm").onsubmit = saveMovement;
   $("cancelMovement").onclick = () => switchView("stock");
   $("movementPart").onchange = updateMovementLocations;
+  $("movementLocation").onchange = () => $("newLocationFields").classList.toggle("hidden", $("movementLocation").value !== "new");
   $("closeQr").onclick = $("closeQr2").onclick = () => $("qrDialog").close();
   $("printBtn").onclick = () => window.print();
 }
@@ -56,7 +59,8 @@ function switchView(view) {
     $("movementDescription").textContent = view === "in" ? "Vyber díl, umístění a množství, které přidáváš." : "Vyber díl, umístění a množství, které vydáváš.";
     $("movementSubmit").textContent = view === "in" ? "Potvrdit naskladnění" : "Potvrdit vyskladnění";
     $("movementError").textContent = "";
-    $("movementPart").innerHTML = parts.map(p => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.id)})</option>`).join("");
+    $("movementPart").innerHTML = `<option value="">Vyber náhradní díl</option>` + parts.map(p => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.id)})</option>`).join("");
+    $("movementPart").value = selectedPartId && parts.some(p => p.id === selectedPartId) ? selectedPartId : "";
     updateMovementLocations();
   }
 }
@@ -72,14 +76,15 @@ function render() {
     const locs = (p.locations||[]).map(l => `Regál ${esc(l.rack)} / Box ${esc(l.box)} (${Number(l.qty)||0})`).join("<br>");
     const s = (p.suppliers||[])[0] || {};
     const qty = total(p);
-    return `<tr>
+    return `<tr data-select="${esc(p.id)}" class="${selectedPartId===p.id ? "selected" : ""}">
       <td><span class="part-name">${esc(p.name)}</span><br><small>${esc(p.id)}</small></td>
-      <td>${esc(p.partNumber)}</td><td class="qty ${qty===0?'zero':''}">${qty} ks</td>
+      <td>${esc(p.partNumber)}</td><td>${p.stockedAt ? new Date(p.stockedAt + "T00:00:00").toLocaleDateString("cs-CZ") : "—"}</td><td class="qty ${qty===0?'zero':''}">${qty} ks</td>
       <td>${locs || "—"}</td><td>${esc(s.name||"—")}</td><td>${esc(s.price||"—")}</td>
       <td>${esc(p.internalCard||"—")}</td><td>${esc(p.costCenter||"—")}</td><td>${esc(p.machine||"—")}</td>
       <td><div class="actions"><button class="mini-btn" data-edit="${esc(p.id)}">Upravit</button><button class="mini-btn" data-qr="${esc(p.id)}">QR</button></div></td>
     </tr>`;
-  }).join("") || `<tr><td colspan="10">Žádné položky neodpovídají filtru.</td></tr>`;
+  }).join("") || `<tr><td colspan="11">Žádné položky neodpovídají filtru.</td></tr>`;
+  $("partsTable").querySelectorAll("[data-select]").forEach(r => r.onclick = e => { if (e.target.closest("button")) return; selectedPartId = r.dataset.select; render(); });
   $("partsTable").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openPart(b.dataset.edit));
   $("partsTable").querySelectorAll("[data-qr]").forEach(b => b.onclick = () => showQr(b.dataset.qr));
   $("statParts").textContent = parts.length;
@@ -90,6 +95,7 @@ function openPart(id) {
   const p = parts.find(x=>x.id===id);
   $("partForm").reset();
   $("partId").value = p?.id || "";
+  $("partCreatedAt").value = p ? (p.stockedAt || "") : "";
   $("dialogTitle").textContent = p ? "Upravit kartu" : "Nová karta";
   $("partName").value = p?.name || "";
   $("partNumber").value = p?.partNumber || "";
@@ -124,25 +130,42 @@ function addLocationRow(l={rack:"",box:"",qty:0}) {
 function savePart(e) {
   e.preventDefault();
   const id=$("partId").value || $("partInternalId").value;
-  const p={id,name:$("partName").value.trim(),partNumber:$("partNumber").value.trim(),internalCard:$("partCard").value.trim(),costCenter:$("partCostCenter").value.trim(),machine:$("partMachine").value.trim(),note:$("partNote").value.trim(),
+  const existing=parts.find(x=>x.id===id);
+  const locations=[...$("locations").children].map(r=>({rack:r.children[0].value.trim(),box:r.children[1].value.trim(),qty:Math.max(0,Number(r.children[2].value)||0)})).filter(x=>x.rack||x.box||x.qty>0);
+  const p={id,stockedAt:existing ? (existing.stockedAt || "") : (locations.some(x=>x.qty>0) ? today() : ""),name:$("partName").value.trim(),partNumber:$("partNumber").value.trim(),internalCard:$("partCard").value.trim(),costCenter:$("partCostCenter").value.trim(),machine:$("partMachine").value.trim(),note:$("partNote").value.trim(),
     suppliers:[...$("suppliers").children].map(r=>({name:r.children[0].value.trim(),price:r.children[1].value.trim()})).filter(x=>x.name||x.price),
-    locations:[...$("locations").children].map(r=>({rack:r.children[0].value.trim(),box:r.children[1].value.trim(),qty:Math.max(0,Number(r.children[2].value)||0)})).filter(x=>x.rack||x.box||x.qty>0)};
+    locations};
   const idx=parts.findIndex(x=>x.id===id); if(idx>=0)parts[idx]=p;else parts.push(p);
   persist();closePart();toast("Karta byla uložena.");
 }
 function updateMovementLocations() {
   const p=parts.find(x=>x.id===$("movementPart").value);
-  $("movementLocation").innerHTML=(p?.locations||[]).map((l,i)=>`<option value="${i}">Regál ${esc(l.rack)} / Box ${esc(l.box)} – ${l.qty} ks</option>`).join("");
-  if(p && !p.locations.length) $("movementLocation").innerHTML='<option value="">Nejdříve přidej umístění v kartě dílu</option>';
+  $("newLocationFields").classList.add("hidden");
+  if (!p) { $("movementLocation").innerHTML = '<option value="">Nejdříve vyber díl</option>'; return; }
+  $("movementLocation").innerHTML=(p.locations||[]).map((l,i)=>`<option value="${i}">Regál ${esc(l.rack)} / Box ${esc(l.box)} – ${l.qty} ks</option>`).join("");
+  if (movementMode === "in") $("movementLocation").innerHTML += '<option value="new">＋ Zadat nové umístění</option>';
+  if (!p.locations?.length) $("movementLocation").value = movementMode === "in" ? "new" : "";
+  if ($( "movementLocation").value === "new") $("newLocationFields").classList.remove("hidden");
 }
 function saveMovement(e) {
   e.preventDefault();
-  const p=parts.find(x=>x.id===$("movementPart").value), i=Number($("movementLocation").value), qty=Number($("movementQty").value);
+  const p=parts.find(x=>x.id===$("movementPart").value), locationValue=$("movementLocation").value, i=Number(locationValue), qty=Number($("movementQty").value);
   $("movementError").textContent="";
-  if(!p || !p.locations?.[i]) { $("movementError").textContent="Vybraný díl nemá platné umístění. Přidej ho nejprve v kartě dílu.";return; }
+  if(!p) { $("movementError").textContent="Vyber náhradní díl.";return; }
   if(!Number.isInteger(qty)||qty<1){$("movementError").textContent="Zadej celé kladné množství.";return;}
+  if(locationValue === "new") {
+    const rack=$("newRack").value.trim(), box=$("newBox").value.trim();
+    if(movementMode !== "in" || !rack || !box) { $("movementError").textContent="Vyplň regál a box nového umístění.";return; }
+    p.locations ||= [];
+    const existingIndex=p.locations.findIndex(l=>l.rack.toLocaleLowerCase("cs-CZ")===rack.toLocaleLowerCase("cs-CZ") && l.box.toLocaleLowerCase("cs-CZ")===box.toLocaleLowerCase("cs-CZ"));
+    if(existingIndex>=0) p.locations[existingIndex].qty += qty; else p.locations.push({rack,box,qty});
+    p.stockedAt = today();
+    persist(); $("movementQty").value=1; $("newRack").value=""; $("newBox").value=""; toast("Materiál byl naskladněn do nového umístění."); switchView("stock"); return;
+  }
+  if(!p.locations?.[i]) { $("movementError").textContent="Vyber platné umístění.";return; }
   if(movementMode==="out" && p.locations[i].qty<qty){$("movementError").textContent="Na vybraném místě není dostatečné množství.";return;}
   p.locations[i].qty += movementMode==="in" ? qty : -qty;
+  if(movementMode==="in") p.stockedAt = today();
   persist();$("movementQty").value=1;toast(movementMode==="in"?"Materiál byl naskladněn.":"Materiál byl vyskladněn.");switchView("stock");
 }
 function makeQr(target,text,size) {

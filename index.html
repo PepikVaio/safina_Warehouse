@@ -57,6 +57,7 @@
           <thead><tr>
             <th>Název <button class="filter-toggle" data-filter="name">⌄</button></th>
             <th>Objednací číslo</th>
+            <th>Datum naskladnění</th>
             <th>Množství</th>
             <th>Umístění</th>
             <th>Dodavatel 1</th>
@@ -82,6 +83,7 @@
         <form id="movementForm" class="form-grid">
           <label class="field full"><span>Náhradní díl</span><select id="movementPart" required></select></label>
           <label class="field"><span>Umístění</span><select id="movementLocation" required></select></label>
+          <div id="newLocationFields" class="field hidden"><span>Nové umístění</span><div class="new-location-inputs"><input id="newRack" placeholder="Regál" aria-label="Nový regál"><input id="newBox" placeholder="Box" aria-label="Nový box"></div></div>
           <label class="field"><span>Množství (ks)</span><input id="movementQty" type="number" min="1" step="1" value="1" required></label>
           <p class="inline-error full" id="movementError"></p>
           <div class="form-actions full"><button type="button" class="btn btn-light" id="cancelMovement">Zpět</button><button class="btn btn-primary" type="submit" id="movementSubmit">Potvrdit naskladnění</button></div>
@@ -97,6 +99,7 @@
         <button type="button" class="icon-btn" id="closeDialog" aria-label="Zavřít">×</button>
       </div>
       <input type="hidden" id="partId">
+      <input type="hidden" id="partCreatedAt">
       <div class="form-grid">
         <label class="field full"><span>Název dílu *</span><input id="partName" required placeholder="Např. Kalhoty Max Neo"></label>
         <label class="field"><span>Objednací číslo</span><input id="partNumber" placeholder="47294759208"></label>

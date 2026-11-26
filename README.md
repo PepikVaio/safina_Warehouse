@@ -40,3 +40,14 @@ GitHub Pages je statický hosting. Pro společný zápis do jednoho JSON souboru
 ## Poznámky
 
 QR knihovna se v tomto prototypu načítá z CDN. Pro ostré použití ji můžeme uložit přímo do repozitáře, aby generování QR nebylo závislé na externím CDN.
+
+
+## Poslední úpravy prototypu
+- Nové karty automaticky dostanou datum přidání, které se zobrazuje v přehledu.
+- Při naskladnění lze vybrat existující umístění nebo zadat nový regál a box.
+- Kliknutím na řádek v přehledu se položka označí; formuláře naskladnění a vyskladnění ji předvyberou.
+- Na mobilu jsou vstupní pole nastavena na velikost písma, která brání automatickému přiblížení Safari při klepnutí.
+
+
+### Datum naskladnění
+Datum se vyplní při založení nové karty pouze tehdy, pokud při jejím vytvoření zadáš kladné množství alespoň do jednoho umístění. Při pozdějším naskladnění se datum aktualizuje. Samotné založení prázdné karty, vyskladnění ani běžná editace datum nemění.
