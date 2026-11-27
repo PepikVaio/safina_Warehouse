@@ -1,33 +1,51 @@
 <!doctype html>
 <html lang="cs">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#172033">
-  <title>Sklad náhradních dílů</title><link rel="stylesheet" href="style.css">
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script defer src="app.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#172033">
+  <title>Sklad náhradních dílů</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topbar"><div class="brand"><div class="brand-mark">S</div><div><strong>Sklad</strong><small>Náhradní díly</small></div></div><div class="top-actions"><span class="user-identity" id="userIdentity"></span><span class="save-state" id="saveState">Nepřipojeno</span><button class="btn btn-primary" id="newPartBtn">＋ Nová karta</button><button class="btn btn-light hidden" id="userManagementBtn">Uživatelé</button><button class="btn btn-light" id="settingsBtn">Uživatel</button></div></header>
-<main class="container">
-  <section class="page-heading"><div><p class="eyebrow">SKLADOVÁ EVIDENCE</p><h1 id="pageTitle">Přehled skladu</h1><p class="muted">Společný sklad synchronizovaný přes soukromý GitHub repozitář.</p></div></section>
-  <section class="stats"><article class="stat-card"><span>Počet položek</span><strong id="statParts">0</strong></article><article class="stat-card"><span>Celkem kusů</span><strong id="statQty">0</strong></article><article class="stat-card"><span>Pod minimem</span><strong id="statLow">0</strong></article></section>
-  <nav class="main-nav"><button class="nav-btn active" data-view="stock">▦ Sklad</button><button class="nav-btn" data-view="in">＋ Naskladnění</button><button class="nav-btn" data-view="out">− Vyskladnění</button><button class="nav-btn" data-view="history">◷ Historie</button></nav>
-  <section id="stockView" class="view"><div class="toolbar"><div class="search-wrap"><span>⌕</span><input id="searchInput" type="search" placeholder="Hledat název, číslo, dodavatele…"></div><select id="stockFilter"><option value="all">Všechny položky</option><option value="in">Na skladě</option><option value="empty">Vyprodáno</option><option value="low">Pod minimálním množstvím</option></select></div>
-    <div class="table-wrap"><table><thead><tr><th>Název</th><th>Objednací číslo</th><th>Celkem</th><th>Minimum</th><th>Umístění</th><th>Dodavatel</th><th>Cena</th><th>Datum posledního naskladnění</th></tr></thead><tbody id="partsTable"></tbody></table></div><p class="table-note">Jedním kliknutím položku vybereš, dalším kliknutím ji otevřeš. Na počítači ji otevřeš také dvojklikem.</p>
-  </section>
-  <section id="movementView" class="view hidden"><div class="panel movement-panel"><p class="eyebrow" id="movementEyebrow">POHYB MATERIÁLU</p><h2 id="movementTitle">Naskladnění</h2><p class="muted" id="movementDescription"></p><form id="movementForm" class="form-grid"><label class="field full"><span>Náhradní díl</span><select id="movementPart" required></select></label><label class="field full"><span>Umístění</span><select id="movementLocation" required></select></label><div id="newLocationFields" class="field full hidden"><span>Nové umístění</span><div class="new-location-inputs"><input id="newRack" placeholder="Regál"><input id="newBox" placeholder="Box"></div></div><label class="field"><span>Množství (ks)</span><input id="movementQty" type="number" min="1" step="1" value="1" required></label><p class="inline-error full" id="movementError"></p><div class="form-actions full"><button type="button" class="btn btn-light" id="cancelMovement">Zpět</button><button class="btn btn-primary" id="movementSubmit">Potvrdit</button></div></form></div></section>
-  <section id="historyView" class="view hidden"><div class="toolbar"><input id="historySearch" type="search" placeholder="Hledat uživatele, díl nebo umístění"><select id="historyFilter"><option value="all">Všechny pohyby</option><option value="in">Naskladnění</option><option value="out">Vyskladnění</option></select></div><div class="table-wrap"><table><thead><tr><th>Datum a čas</th><th>Uživatel</th><th>Díl</th><th>Pohyb</th><th>Umístění</th><th>Množství</th></tr></thead><tbody id="historyTable"></tbody></table></div></section>
-</main>
-<dialog id="partDialog" class="dialog"><form id="partForm"><div class="dialog-header"><div><p class="eyebrow">KARTA NÁHRADNÍHO DÍLU</p><h2 id="dialogTitle">Nová karta</h2></div><button type="button" class="icon-btn" id="closeDialog">×</button></div><input type="hidden" id="partId"><div class="form-grid">
-<label class="field full"><span>Název dílu *</span><input id="partName" required></label><label class="field"><span>Objednací číslo</span><input id="partNumber"></label><label class="field"><span>Interní ID</span><input id="partInternalId" readonly></label>
-<div class="field full"><span>Obrázek dílu</span><input id="partImage" type="file" accept="image/*"><img id="imagePreview" class="image-preview hidden" alt="Náhled obrázku"><small class="muted">Obrázek se uloží do složky images v soukromém repozitáři.</small></div>
-<div class="section-label full">Dodavatelé</div><div id="suppliers" class="supplier-list full"></div><button type="button" class="btn btn-light full" id="addSupplier">＋ Přidat dodavatele</button>
-<div class="section-label full">Interní informace</div><label class="field"><span>Interní karta</span><input id="partCard"></label><label class="field"><span>Středisko</span><input id="partCostCenter"></label><label class="field full"><span>Zařízení</span><input id="partMachine"></label><label class="field full"><span>Minimální množství (ks)</span><input id="partMinimum" type="number" min="0" step="1" value="0"></label><label class="field full"><span>Poznámka</span><textarea id="partNote" rows="3"></textarea></label>
-</div><div class="dialog-footer"><button type="button" class="btn btn-light" id="cancelPart">Zrušit</button><button type="submit" class="btn btn-primary">Uložit kartu</button></div></form></dialog>
-<dialog id="detailDialog" class="dialog"><div class="dialog-header"><div><p class="eyebrow">DETAIL NÁHRADNÍHO DÍLU</p><h2 id="detailTitle"></h2></div><button class="icon-btn" id="closeDetail">×</button></div><div id="detailContent"></div><div class="dialog-footer detail-footer"><div class="detail-footer-left"><button class="btn btn-primary" id="detailEdit">Upravit</button><button class="btn btn-light" id="detailStockIn">＋ Naskladnit</button><button class="btn btn-light" id="detailStockOut">− Vyskladnit</button></div><div class="detail-footer-right"><button class="btn btn-light" id="detailPrint">Tisk QR štítku</button><button class="btn btn-light" id="detailClose2">Zavřít</button></div></div></dialog>
-<dialog id="printDialog" class="dialog qr-dialog"><div class="label-preview" id="printLabel"><div id="printQr"></div></div><div class="dialog-footer"><button class="btn btn-light" id="closePrint">Zavřít</button><button class="btn btn-primary" id="printBtn">Tisk</button></div></dialog>
-<dialog id="settingsDialog" class="dialog"><form id="settingsForm"><div class="dialog-header"><div><p class="eyebrow">PŘIHLÁŠENÝ ÚČET</p><h2>Uživatel</h2></div><button type="button" class="icon-btn" id="closeSettings">×</button></div><div id="userProfileInfo" class="user-profile-info hidden"><div><span>Jméno</span><strong id="settingsFirstName">—</strong></div><div><span>Příjmení</span><strong id="settingsLastName">—</strong></div><div><span>Status</span><strong id="settingsRole">—</strong></div><div class="profile-actions"><button type="button" class="btn btn-light" id="logoutBtn">Odhlásit</button></div></div><div id="loginFields" class="form-grid settings-grid"><label class="field full"><span>GitHub token</span><input id="accessToken" type="password" autocomplete="off" placeholder="github_pat_…" required></label><div class="full"><button type="button" class="btn btn-light" id="adminToolsToggle" aria-expanded="false">Nástroje správce</button></div><div class="admin-tools full hidden" id="adminTools"><div class="field full"><button type="button" class="btn btn-light" id="generateTokenHash">Vypočítat SHA-256 otisk tokenu</button><textarea id="tokenHashOutput" class="hidden" rows="2" readonly placeholder="Otisk tokenu"></textarea></div><div class="admin-test"><button type="button" class="btn btn-light" id="testConnection">Ověřit připojení</button><div class="full" id="connectionStatus"></div></div></div></div><div class="dialog-footer"><button type="button" class="btn btn-light" id="closeSettings2">Zavřít</button><button type="submit" class="btn btn-primary" id="saveSettingsButton">Uložit přístup</button></div></form></dialog>
-<dialog id="usersDialog" class="dialog"><div class="dialog-header"><div><p class="eyebrow">SPRÁVA PŘÍSTUPŮ</p><h2>Uživatelé</h2></div><button type="button" class="icon-btn" id="closeUsers">×</button></div><p class="muted">Přístupové tokeny se ukládají pouze jako SHA-256 otisky. Samotný token se do users.json neukládá.</p><div id="usersList" class="users-list"></div><h3 id="userFormHeading">Přidat uživatele</h3><form id="userForm" class="form-grid"><label class="field"><span>Jméno</span><input id="newUserFirst" required></label><label class="field"><span>Příjmení</span><input id="newUserLast" required></label><label class="field full"><span>Role v aplikaci</span><select id="newUserRole"><option value="read">Read – pouze prohlížení</option><option value="write">Write – úpravy skladu</option><option value="admin">Admin – správa uživatelů</option></select></label><label class="field full"><span>GitHub token nového uživatele</span><input id="newUserToken" type="password" autocomplete="off" required placeholder="github_pat_…"></label><p class="muted full">Token vytvoří správce pod účtem PepikVaio. Pro role Write a Admin musí mít token Contents: Read and write.</p><div class="form-actions full"><button type="submit" class="btn btn-primary" id="saveUserButton">Uložit uživatele</button></div><p class="full invite-status" id="userSaveStatus" role="status"></p></form><div id="inviteResult" class="invite-result hidden"><p><strong>Pozvánka je připravena.</strong> Odkaz obsahuje přístupový token. Posílej ho pouze soukromě; kdokoli, kdo získá odkaz, může token použít.</p><textarea id="inviteLink" rows="3" readonly></textarea><div class="form-actions"><button type="button" class="btn btn-primary" id="copyInvite">Sdílet pozvánku</button><button type="button" class="btn btn-light" id="copyInviteOnly">Kopírovat odkaz</button></div></div></dialog>
-<dialog id="inviteDialog" class="dialog"><div class="dialog-header"><div><p class="eyebrow">POZVÁNKA DO SKLADU</p><h2>Nastavení přístupu</h2></div></div><p id="inviteDescription" class="muted"></p><p>Po uložení se přístupový token uloží v tomto prohlížeči. Token se na stránce nezobrazuje.</p><p class="invite-status" id="inviteSaveStatus" role="status"></p><div class="dialog-footer"><button type="button" class="btn btn-primary" id="saveInvite">Uložit přístup</button></div></dialog>
-<div class="toast" id="toast" role="status"></div>
-</body></html>
+  <div id="screenLoader" class="container" role="status" style="padding:32px 16px">Načítám sklad…</div>
+  <div id="appScreens"></div>
+  <div class="toast" id="toast" role="status"></div>
+  <script>
+    (async function loadScreens() {
+      const target = document.getElementById('appScreens');
+      const screens = [
+        'screens/main.html',
+        'screens/movement.html',
+        'screens/history.html',
+        'screens/new-card.html',
+        'screens/user.html',
+        'screens/users.html',
+        'screens/detail.html'
+      ];
+      for (const path of screens) {
+        const response = await fetch(path);
+        if (!response.ok) throw new Error('Nelze načíst ' + path + ' (' + response.status + ').');
+        target.insertAdjacentHTML('beforeend', await response.text());
+      }
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Nepodařilo se načíst knihovnu QR kódů.'));
+        document.head.appendChild(script);
+      });
+      document.getElementById('screenLoader').remove();
+      const app = document.createElement('script');
+      app.src = 'app.js';
+      app.onerror = () => showLoadError('Nepodařilo se načíst app.js.');
+      document.body.appendChild(app);
+    })().catch(error => showLoadError(error.message));
+
+    function showLoadError(message) {
+      const loader = document.getElementById('screenLoader');
+      if (loader) loader.textContent = 'Chyba při načítání aplikace: ' + message;
+    }
+  </script>
+</body>
+</html>
