@@ -219,6 +219,22 @@ function updateUserSettings() {
   $("loginFields").classList.toggle("hidden",configured);
   $("saveSettingsButton").classList.toggle("hidden",configured);
 
+  // Dynamické jméno v horním pásu – příjmení a potom jméno.
+  const nameField=$("settingsUserName");
+  if(nameField) {
+    nameField.textContent=configured
+      ? `${currentUser.lastName} ${currentUser.firstName}`
+      : "Uživatel";
+  }
+
+  // Označení typu účtu pod horním pásem.
+  const accountType=$("settingsAccountType");
+  if(accountType) {
+    accountType.textContent=currentRole==="admin"
+      ? "Správce skladu"
+      : "Uživatel skladu";
+  }
+
   $("settingsFirstName").textContent=currentUser?.firstName||"—";
   $("settingsLastName").textContent=currentUser?.lastName||"—";
   $("settingsRole").textContent=roleLabel(currentRole);

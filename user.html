@@ -2,33 +2,41 @@
 <!-- HTML fragment loaded by index.html; keep app element IDs unchanged. -->
 
 <dialog class="dialog" id="settingsDialog">
-
   <form id="settingsForm">
 
     <div class="dialog-header">
       <div>
         <p class="eyebrow">PŘIHLÁŠENÝ ÚČET</p>
-        <h2>Uživatel</h2>
+        <h2>
+          <span id="settingsFirstName">—</span>
+          <span id="settingsLastName">—</span>
+        </h2>
       </div>
       <button class="icon-btn" id="closeSettings" type="button">×</button>
     </div>
 
-    <!-- Informace o přihlášeném uživateli -->
+    <p class="muted" id="settingsAccountType">Uživatel skladu</p>
+
     <div class="user-profile-info hidden" id="userProfileInfo">
-
-      <div class="panel">
-        <span>Jméno</span>
-        <strong id="settingsFirstName">—</strong>
-      </div>
-
-      <div class="panel">
-        <span>Příjmení</span>
-        <strong id="settingsLastName">—</strong>
-      </div>
 
       <div class="panel">
         <span>Status / oprávnění</span>
         <strong id="settingsRole">—</strong>
+      </div>
+
+      <div class="panel">
+        <span>Poslední přihlášení</span>
+        <strong id="settingsLastLogin">—</strong>
+      </div>
+
+      <div class="panel">
+        <span>Provedené operace</span>
+        <strong id="settingsOperationCount">—</strong>
+      </div>
+
+      <div class="panel">
+        <span>Verze aplikace</span>
+        <strong id="appVersion">—</strong>
       </div>
 
       <div class="panel full">
@@ -44,32 +52,9 @@
         </label>
       </div>
 
-      <div class="panel full">
-        <h3>Aktivita uživatele</h3>
-
-        <div class="form-grid">
-          <div>
-            <span>Poslední přihlášení</span>
-            <strong id="settingsLastLogin">—</strong>
-          </div>
-
-          <div>
-            <span>Provedené operace</span>
-            <strong id="settingsOperationCount">—</strong>
-          </div>
-
-          <div class="full">
-            <span>Verze aplikace</span>
-            <strong id="appVersion">—</strong>
-          </div>
-        </div>
-      </div>
-
     </div>
 
-    <!-- Přihlašovací formulář -->
     <div class="form-grid settings-grid" id="loginFields">
-
       <label class="field full">
         <span>GitHub token</span>
         <input
@@ -80,10 +65,8 @@
           type="password"
         />
       </label>
-
     </div>
 
-    <!-- Tlačítka -->
     <div class="dialog-footer">
 
       <button class="btn btn-light" id="logoutBtn" type="button">
@@ -101,7 +84,6 @@
     </div>
 
   </form>
-
 </dialog>
 
 
