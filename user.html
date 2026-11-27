@@ -1,6 +1,7 @@
-<!-- Nastavení účtu a přihlášení -->
+
+<!-- Údaje přihlášeného uživatele -->
 <dialog class="dialog" id="settingsDialog">
-  <form id="settingsForm">
+  <div>
     <div class="dialog-header">
       <div>
         <p class="eyebrow">PŘIHLÁŠENÝ ÚČET</p>
@@ -11,7 +12,9 @@
       </div>
       <button class="icon-btn" id="closeSettings" type="button">×</button>
     </div>
+
     <p class="muted" id="settingsAccountType"></p>
+
     <div class="user-profile-info hidden" id="userProfileInfo">
       <div class="profile-info-grid">
         <div class="profile-info-heading">Informace</div>
@@ -26,18 +29,7 @@
         <strong id="appVersion">—</strong>
       </div>
     </div>
-    <div class="form-grid settings-grid" id="loginFields">
-      <label class="field full">
-        <span>GitHub token</span>
-        <input
-          autocomplete="off"
-          id="accessToken"
-          placeholder="github_pat_…"
-          required
-          type="password"
-        />
-      </label>
-    </div>
+
     <div class="dialog-footer">
       <button class="btn btn-light" id="logoutBtn" type="button">
         Odhlásit
@@ -45,9 +37,6 @@
       <button class="btn btn-light" id="closeSettings2" type="button">
         Zavřít
       </button>
-      <button class="btn btn-primary" id="saveSettingsButton" type="submit">
-        Uložit přístup
-      </button>
     </div>
-  </form>
+  </div>
 </dialog>
