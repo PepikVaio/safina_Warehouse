@@ -228,9 +228,9 @@ function updateUserSettings() {
   // Označení typu účtu pod horním pásem.
   const accountType=$("settingsAccountType");
   if(accountType) {
-    accountType.textContent=currentRole==="admin"
-      ? "Správce skladu"
-      : "Uživatel skladu";
+    accountType.textContent=configured
+      ? (currentRole==="admin" ? "Administrátor" : "Uživatel skladu")
+      : "";
   }
 
   $("settingsFirstName").textContent=configured
