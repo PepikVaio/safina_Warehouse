@@ -1,4 +1,3 @@
-
 const PROFILE_KEY = "sklad-profile-v1";
 const REPO_OWNER = "PepikVaio";
 const REPO_NAME = "safina_Warehouse_Data";
@@ -9,6 +8,7 @@ let fileState = { data: null, history: null };
 let currentRole = "read";
 let currentUser = null;
 let usersData = { users: [] }, usersFileSha = null, pendingInvite = null;
+let usersDraft = null;
 let currentImageData = null;
 let lastPartTap = { id: null, at: 0 };
 let currentLastLogin = null;
@@ -178,8 +178,12 @@ function bind() {
   on("cancelSettings","click",()=>$("settingsDialog")?.close());
 
   // Seznam uživatelů
-  on("closeUsers","click",()=>$("listUsersDialog")?.close());
-  on("closeUsersList","click",()=>$("listUsersDialog")?.close());
+  on("closeUsers","click",closeUsersDialog);
+  on("closeUsersList","click",closeUsersDialog);
+  on("saveUsersList","click",saveUsersDraft);
+  on("listUsersDialog","close",()=> {
+    usersDraft=null;
+  });
 
   // Přidání uživatele
   on("userForm","submit",saveUser);
@@ -876,6 +880,9 @@ async function openUsers(mode="list") {
         addDialog.close();
       }
 
+      // Vytvoří pracovní kopii. Změny se zatím neukládají.
+      usersDraft=JSON.parse(JSON.stringify(usersData));
+
       renderUsers();
 
       if(!listDialog.open) {
@@ -889,6 +896,8 @@ async function openUsers(mode="list") {
       if(listDialog.open) {
         listDialog.close();
       }
+
+      usersDraft=null;
 
       const userForm=$("userForm");
       const inviteResult=$("inviteResult");
@@ -942,6 +951,13 @@ async function refreshUsers() {
   }
 }
 
+function closeUsersDialog() {
+  $("listUsersDialog")?.close();
+
+  // Pracovní kopie se zahodí při zavření dialogu.
+  usersDraft=null;
+}
+
 function renderUsers() {
   const list=$("usersList");
 
@@ -950,7 +966,9 @@ function renderUsers() {
     return;
   }
 
-  const sorted=usersData.users
+  const data=usersDraft||usersData;
+
+  const sorted=data.users
     .map((u,index)=>({u,index}))
     .sort((a,b)=>{
       const ar=a.u.role==="admin"?0:1;
@@ -985,7 +1003,7 @@ function renderUsers() {
             ${active?"Deaktivovat":"Aktivovat"}
           </button>
 
-                    <button type="button" class="btn btn-light user-remove" title="Odebrat uživatele" aria-label="Odebrat uživatele">
+          <button type="button" class="btn btn-light user-remove" title="Odebrat uživatele" aria-label="Odebrat uživatele">
             ×
           </button>
         </div>
@@ -996,51 +1014,37 @@ function renderUsers() {
   list.querySelectorAll(".user-role").forEach(el=>{
     el.onchange=async()=>{
       const i=Number(el.closest(".user-row").dataset.index);
-
-      if(!isAdmin()) return;
-
-      const user=usersData.users[i];
-      const old=user.role;
+      const user=data.users[i];
       const ownHash=await sha256Token(profile().token);
 
       if(user.tokenHash===ownHash&&el.value!=="admin") {
-        el.value=old;
+        el.value=user.role;
         toast("Roli právě přihlášeného správce nelze změnit.");
         return;
       }
 
       if(
-        old==="admin"&&
+        user.role==="admin"&&
         el.value!=="admin"&&
         isUserActive(user)&&
-        usersData.users.filter(x=>x.role==="admin"&&isUserActive(x)).length===1
+        data.users.filter(x=>x.role==="admin"&&isUserActive(x)).length===1
       ) {
-        el.value=old;
+        el.value=user.role;
         toast("Nelze odebrat roli poslednímu aktivnímu správci.");
         return;
       }
 
       user.role=el.value;
 
-      try {
-        await saveUsers();
-        renderUsers();
-        toast("Role uživatele byla změněna.");
-      } catch(e) {
-        user.role=old;
-        renderUsers();
-        toast(e.message);
-      }
+      renderUsers();
+      toast("Změna role čeká na uložení.");
     };
   });
 
   list.querySelectorAll(".user-toggle").forEach(el=>{
     el.onclick=async()=>{
       const i=Number(el.closest(".user-row").dataset.index);
-      const user=usersData.users[i];
-
-      if(!isAdmin()) return;
-
+      const user=data.users[i];
       const ownHash=await sha256Token(profile().token);
 
       if(user.tokenHash===ownHash) {
@@ -1053,42 +1057,28 @@ function renderUsers() {
       if(
         active&&
         user.role==="admin"&&
-        usersData.users.filter(x=>x.role==="admin"&&isUserActive(x)).length===1
+        data.users.filter(x=>x.role==="admin"&&isUserActive(x)).length===1
       ) {
         toast("Nelze deaktivovat posledního aktivního správce.");
         return;
       }
 
-      const oldStatus=user.status;
       user.status=active?"deactive":"active";
 
-      try {
-        await saveUsers();
-        renderUsers();
+      renderUsers();
 
-        toast(
-          active
-            ? "Uživatel byl deaktivován."
-            : "Uživatel byl aktivován."
-        );
-
-      } catch(e) {
-        if(oldStatus===undefined) {
-          delete user.status;
-        } else {
-          user.status=oldStatus;
-        }
-
-        renderUsers();
-        toast(e.message);
-      }
+      toast(
+        active
+          ? "Deaktivace čeká na uložení."
+          : "Aktivace čeká na uložení."
+      );
     };
   });
 
   list.querySelectorAll(".user-remove").forEach(el=>{
     el.onclick=async()=>{
       const i=Number(el.closest(".user-row").dataset.index);
-      const u=usersData.users[i];
+      const u=data.users[i];
 
       if(!confirm(`Odebrat uživatele ${u.firstName} ${u.lastName}?`)) {
         return;
@@ -1102,28 +1092,81 @@ function renderUsers() {
       if(
         u.role==="admin"&&
         isUserActive(u)&&
-        usersData.users.filter(x=>x.role==="admin"&&isUserActive(x)).length===1
+        data.users.filter(x=>x.role==="admin"&&isUserActive(x)).length===1
       ) {
         toast("Nelze odebrat posledního aktivního správce.");
         return;
       }
 
-      const previous=usersData.users.slice();
+      data.users.splice(i,1);
 
-      usersData.users.splice(i,1);
-
-      try {
-        await saveUsers();
-        renderUsers();
-        toast("Uživatel byl odebrán.");
-
-      } catch(e) {
-        usersData.users=previous;
-        renderUsers();
-        toast(e.message);
-      }
+      renderUsers();
+      toast("Odebrání uživatele čeká na uložení.");
     };
   });
+}
+
+async function saveUsersDraft() {
+  if(!isAdmin()) {
+    toast("Pouze správce může měnit uživatele.");
+    return;
+  }
+
+  if(!usersDraft) {
+    toast("Nejsou připraveny žádné změny.");
+    return;
+  }
+
+  const button=$("saveUsersList");
+
+  if(button) {
+    button.disabled=true;
+    button.textContent="Ukládám…";
+  }
+
+  const original=usersData;
+
+  try {
+    const ownHash=await sha256Token(profile().token);
+
+    const ownUser=usersDraft.users.find(
+      u=>u.tokenHash===ownHash
+    );
+
+    if(!ownUser||ownUser.role!=="admin"||!isUserActive(ownUser)) {
+      throw new Error("Vlastní účet správce nelze odebrat, deaktivovat ani mu změnit roli.");
+    }
+
+    const activeAdmins=usersDraft.users.filter(
+      u=>u.role==="admin"&&isUserActive(u)
+    );
+
+    if(activeAdmins.length===0) {
+      throw new Error("Nelze uložit seznam bez alespoň jednoho aktivního správce.");
+    }
+
+    usersData=usersDraft;
+
+    await saveUsers();
+
+    usersDraft=null;
+
+    $("listUsersDialog")?.close();
+
+    toast("Změny uživatelů byly uloženy.");
+
+  } catch(e) {
+    usersData=original;
+
+    renderUsers();
+    toast(`Změny se nepodařilo uložit: ${e.message}`);
+
+  } finally {
+    if(button) {
+      button.disabled=false;
+      button.textContent="Uložit";
+    }
+  }
 }
 
 async function saveUsers() {
