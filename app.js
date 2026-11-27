@@ -253,10 +253,8 @@ function bind() {
   on("detailStockIn","click",()=>openMovementFromDetail("in"));
   on("detailStockOut","click",()=>openMovementFromDetail("out"));
 
-  // Tisk
+    // Tisk
   on("detailPrint","click",()=>showPrint(currentDetailId));
-  on("closePrint","click",()=>$("printDialog")?.close());
-  on("printBtn","click",()=>window.print());
 
   // Historie
   on("historySearch","input",renderHistory);
@@ -2486,22 +2484,30 @@ function showPrint(id) {
 
   if(!p) return;
 
-  $("printQr").innerHTML="";
+  const key="sklad-print-label";
 
-  if(window.QRCode) {
-    new QRCode($("printQr"),{
-      text:p.id,
-      width:190,
-      height:190,
-      correctLevel:QRCode.CorrectLevel.M
-    });
-  } else {
-    $("printQr").textContent=p.id;
+  const labelData={
+    id:p.id,
+    name:p.name||"",
+    partNumber:p.partNumber||"",
+    suppliers:(p.suppliers||[])
+      .filter(s=>s?.name)
+      .map(s=>({name:s.name})),
+    machine:p.machine||""
+  };
+
+  localStorage.setItem(key,JSON.stringify(labelData));
+
+  const printWindow=window.open(
+    new URL("print-label.html",window.location.href).href,
+    "_blank"
+  );
+
+  if(!printWindow) {
+    localStorage.removeItem(key);
+    toast("Povol vyskakovací okna pro tisk štítku.");
   }
-
-  $("printDialog").showModal();
 }
-
 
 // =========================================================
 // SPUŠTĚNÍ APLIKACE
