@@ -1,0 +1,414 @@
+
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#172033"/>
+  <title>Pozvánka do skladu</title>
+  <link rel="stylesheet" href="style.css"/>
+
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: #f3f5f9;
+    }
+
+    .invite-card {
+      width: 100%;
+      max-width: 440px;
+      padding: 32px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 35px rgba(0,0,0,.08);
+    }
+
+    .invite-brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .invite-brand .brand-mark {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      font-size: 24px;
+    }
+
+    .invite-heading {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .invite-heading h1 {
+      font-size: 25px;
+      margin: 8px 0;
+    }
+
+    .invite-details {
+      background: #f3f5f9;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .invite-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 0;
+    }
+
+    .invite-row span {
+      color: #64748b;
+    }
+
+    .invite-row strong {
+      text-align: right;
+    }
+
+    .invite-message {
+      text-align: center;
+      margin: 16px 0;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .invite-status {
+      min-height: 22px;
+      margin-top: 16px;
+      text-align: center;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    .invite-error {
+      color: #dc2626;
+    }
+
+    .invite-success {
+      color: #15803d;
+    }
+
+    #connectInviteBtn {
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="invite-card">
+
+    <div class="invite-brand">
+      <div class="brand-mark">S</div>
+      <strong>Sklad</strong>
+      <div class="muted">Náhradní díly</div>
+    </div>
+
+    <div class="invite-heading">
+      <p class="eyebrow">POZVÁNKA DO SKLADU</p>
+      <h1>Připojit ke skladu</h1>
+      <p class="muted">
+        Byla vám vytvořena pozvánka do společného skladu.
+      </p>
+    </div>
+
+    <div class="invite-details">
+      <div class="invite-row">
+        <span>Jméno</span>
+        <strong id="inviteName">Načítání…</strong>
+      </div>
+
+      <div class="invite-row">
+        <span>Role</span>
+        <strong id="inviteRole">Načítání…</strong>
+      </div>
+    </div>
+
+    <p class="invite-message">
+      Potvrzením se automaticky připojíte ke skladu.
+      GitHub token nemusíte zadávat.
+    </p>
+
+    <button
+      class="btn btn-primary"
+      id="connectInviteBtn"
+      type="button"
+      disabled
+    >
+      Připojit
+    </button>
+
+    <div
+      class="invite-status"
+      id="inviteStatus"
+      role="status"
+      aria-live="polite"
+    ></div>
+
+  </main>
+
+  <script>
+    const PROFILE_KEY = "sklad-profile-v1";
+    const REPO_OWNER = "PepikVaio";
+    const REPO_NAME = "safina_Warehouse_Data";
+
+    const $ = id => document.getElementById(id);
+
+    let pendingInvite = null;
+
+    function base64UrlDecode(value) {
+      const raw = value
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+
+      const binary = atob(
+        raw + "=".repeat((4 - raw.length % 4) % 4)
+      );
+
+      return new TextDecoder().decode(
+        Uint8Array.from(binary, c => c.charCodeAt(0))
+      );
+    }
+
+    function roleLabel(role) {
+      return {
+        read: "Read – pouze prohlížení",
+        write: "Write – úpravy skladu",
+        admin: "Admin – správce"
+      }[role] || role;
+    }
+
+    function showStatus(message, type = "") {
+      const el = $("inviteStatus");
+
+      el.textContent = message;
+      el.className = "invite-status";
+
+      if (type) {
+        el.classList.add(`invite-${type}`);
+      }
+    }
+
+    function loadInvite() {
+      const raw = location.hash.startsWith("#invite=")
+        ? location.hash.slice(8)
+        : "";
+
+      if (!raw) {
+        showStatus(
+          "Pozvánka nebyla nalezena. Otevři celý pozvánkový odkaz.",
+          "error"
+        );
+        return;
+      }
+
+      try {
+        const data = JSON.parse(base64UrlDecode(raw));
+
+        if (
+          !data ||
+          typeof data.token !== "string" ||
+          !data.token ||
+          !data.firstName ||
+          !data.lastName ||
+          !["read", "write", "admin"].includes(data.role) ||
+          !data.inviteExpiresAt
+        ) {
+          throw new Error("Neplatné údaje pozvánky.");
+        }
+
+        pendingInvite = data;
+
+        $("inviteName").textContent =
+          `${data.firstName} ${data.lastName}`;
+
+        $("inviteRole").textContent = roleLabel(data.role);
+
+        $("connectInviteBtn").disabled = false;
+
+        showStatus("Pozvánka je připravena k potvrzení.");
+
+      } catch (e) {
+        showStatus(
+          "Pozvánka je neplatná nebo poškozená.",
+          "error"
+        );
+      }
+
+      // Odstranění tokenu z adresního řádku.
+      history.replaceState(
+        null,
+        "",
+        location.pathname + location.search
+      );
+    }
+
+    async function sha256Token(token) {
+      if (!crypto?.subtle) {
+        throw new Error(
+          "Pro ověření je potřeba zabezpečené připojení HTTPS."
+        );
+      }
+
+      const bytes = new TextEncoder().encode(token);
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+
+      return [...new Uint8Array(digest)]
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+    }
+
+    function decodeContent(content) {
+      const binary = atob(content.replace(/\n/g, ""));
+
+      const bytes = Uint8Array.from(
+        binary,
+        c => c.charCodeAt(0)
+      );
+
+      return new TextDecoder().decode(bytes);
+    }
+
+    async function verifyInvite() {
+      if (!pendingInvite) {
+        throw new Error("Pozvánka nebyla nalezena.");
+      }
+
+      const expires = Date.parse(
+        pendingInvite.inviteExpiresAt
+      );
+
+      if (
+        !Number.isFinite(expires) ||
+        Date.now() > expires
+      ) {
+        throw new Error(
+          "Platnost pozvánky vypršela. Požádej správce o novou."
+        );
+      }
+
+      const response = await fetch(
+        `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/users.json`,
+        {
+          headers: {
+            "Accept": "application/vnd.github+json",
+            "Authorization": `Bearer ${pendingInvite.token}`,
+            "X-GitHub-Api-Version": "2022-11-28"
+          },
+          cache: "no-store"
+        }
+      );
+
+      const file = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          file.message ||
+          `Nelze ověřit přístup ke skladu (${response.status}).`
+        );
+      }
+
+      if (!file.content) {
+        throw new Error("Soubor users.json je prázdný.");
+      }
+
+      const data = JSON.parse(
+        decodeContent(file.content)
+      );
+
+      const hash = await sha256Token(pendingInvite.token);
+
+      const match = (Array.isArray(data.users) ? data.users : [])
+        .find(user =>
+          typeof user.tokenHash === "string" &&
+          user.tokenHash.toLowerCase() === hash
+        );
+
+      if (!match) {
+        throw new Error(
+          "Pozvánka již není platná nebo byl uživatel odebrán."
+        );
+      }
+
+      if (match.status === "deactive") {
+        throw new Error("Tento účet je deaktivován.");
+      }
+
+      if (
+        match.inviteExpiresAt !== pendingInvite.inviteExpiresAt
+      ) {
+        throw new Error(
+          "Pozvánka neodpovídá záznamu uživatele."
+        );
+      }
+
+      if (
+        match.firstName !== pendingInvite.firstName ||
+        match.lastName !== pendingInvite.lastName ||
+        match.role !== pendingInvite.role
+      ) {
+        throw new Error(
+          "Údaje pozvánky neodpovídají záznamu uživatele."
+        );
+      }
+    }
+
+    async function connectInvite() {
+      if (!pendingInvite) return;
+
+      const button = $("connectInviteBtn");
+
+      button.disabled = true;
+      button.textContent = "Ověřuji…";
+
+      showStatus("Ověřuji platnost pozvánky…");
+
+      try {
+        await verifyInvite();
+
+        showStatus(
+          "Pozvánka byla ověřena. Připojuji ke skladu…",
+          "success"
+        );
+
+        localStorage.setItem(
+          PROFILE_KEY,
+          JSON.stringify({
+            token: pendingInvite.token
+          })
+        );
+
+        // Otevření hlavní aplikace.
+        window.location.replace(
+          new URL("./", window.location.href).href
+        );
+
+      } catch (e) {
+        console.error("Připojení přes pozvánku:", e);
+
+        showStatus(e.message, "error");
+
+        button.disabled = false;
+        button.textContent = "Připojit";
+      }
+    }
+
+    $("connectInviteBtn").addEventListener(
+      "click",
+      connectInvite
+    );
+
+    loadInvite();
+  </script>
+
+</body>
+</html>

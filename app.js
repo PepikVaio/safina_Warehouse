@@ -1278,7 +1278,7 @@ async function saveUser(e) {
       })
     );
 
-    const url=`${location.origin}${location.pathname}${location.search}#invite=${invite}`;
+    const inviteUrl = new URL("invite.html", location.href); inviteUrl.hash = `invite=${invite}`;  const url = inviteUrl.href;
 
     $("inviteLink").value=url;
     $("newUserToken").value="";
