@@ -333,11 +333,14 @@ function fillSettings(p) {
 
 function openSettings() {
   fillSettings(profile());
-
   updateUserSettings();
 
-  if(!$("settingsDialog").open) {
-    $("settingsDialog").showModal();
+  const dialog=currentUser
+    ? $("settingsDialog")
+    : $("loginDialog");
+
+  if(!dialog.open) {
+    dialog.showModal();
   }
 }
 
@@ -361,7 +364,7 @@ async function saveSettings(e) {
       return;
     }
 
-    $("settingsDialog").close();
+    $("loginDialog").close();
     updateUserSettings();
     toast("Přístup byl uložen.");
 
