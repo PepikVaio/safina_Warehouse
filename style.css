@@ -32,20 +32,15 @@ button:disabled,.permission-disabled:disabled{opacity:.42!important;cursor:not-a
 
 /* Profil přihlášeného uživatele */
 .user-profile-info{display:block;margin-top:18px;padding:16px;border:1px solid #e5eaf1;border-radius:12px;background:#fbfcfe}
-.profile-info-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);column-gap:18px;align-items:center}
-.profile-info-grid>div,.profile-info-grid>strong{padding:10px 8px;border-bottom:1px solid #e9edf3;font-size:13px;min-width:0;overflow-wrap:anywhere}
+.profile-info-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);column-gap:12px;align-items:center}
+.profile-info-grid>div,.profile-info-grid>strong{padding:11px 5px;border-bottom:1px solid #e9edf3;font-size:13px;min-width:0;overflow-wrap:anywhere}
 .profile-info-grid>div{color:#667085}
 .profile-info-grid>strong{color:#172033;font-weight:700}
-.profile-info-grid .profile-info-heading{font-size:12px;font-weight:700;color:#475467;padding-top:4px;padding-bottom:11px}
+.profile-info-grid .profile-info-heading{font-size:13px;font-weight:700;color:#172033;padding-top:5px;padding-bottom:12px}
 .profile-info-grid>div:nth-last-child(2),.profile-info-grid>strong:last-child{border-bottom:0}
 .profile-token{margin-top:16px;padding-top:14px;border-top:1px solid #e5eaf1}
 .profile-token .field{width:100%}
 .profile-token .field span{font-size:12px;font-weight:700;color:#475467}
 .profile-token input{width:100%;background:#f8fafc;color:#667085;cursor:default}
 .invite-status{font-size:12px;line-height:1.5;color:#475467;min-height:0}
-@media(max-width:760px){
-  .user-profile-info{padding:12px}
-  .profile-info-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);column-gap:8px}
-  .profile-info-grid>div,.profile-info-grid>strong{padding:10px 5px;font-size:12px}
-  .profile-info-grid .profile-info-heading{font-size:11px}
-}
+@media(max-width:760px){.user-profile-info{padding:12px}.profile-info-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);column-gap:8px}.profile-info-grid>div,.profile-info-grid>strong{padding:10px 5px;font-size:12px}.profile-info-grid .profile-info-heading{font-size:13px;font-weight:700;color:#172033}}
