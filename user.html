@@ -1,254 +1,74 @@
 
-<!-- User profile and login dialogs. -->
-
-<style>
-  #settingsDialog {
-    width: min(560px, calc(100% - 24px));
-    max-width: 560px;
-    max-height: 92vh;
-    max-height: 92dvh;
-    padding: clamp(18px, 4vw, 28px);
-    overflow-y: auto;
-  }
-
-  #settingsDialog form {
-    min-width: 0;
-  }
-
-  #settingsDialog .user-profile-info {
-    display: block;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-  }
-
-  #settingsDialog .user-profile-info.hidden {
-    display: none !important;
-  }
-
-  #settingsDialog .profile-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 30px;
-  }
-
-  #settingsDialog .profile-heading h2 {
-    margin: 0;
-    font-size: clamp(21px, 4vw, 27px);
-  }
-
-  #settingsDialog .profile-status {
-    flex-shrink: 0;
-    padding: 7px 15px;
-    border-radius: 30px;
-    background: #e8f8ee;
-    color: #159447;
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  #settingsDialog .profile-name {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0 8px;
-    margin-bottom: 7px;
-    font-size: clamp(27px, 6vw, 38px);
-    font-weight: 700;
-    line-height: 1.2;
-    overflow-wrap: anywhere;
-  }
-
-  #settingsDialog .profile-subtitle {
-    margin: 0;
-    color: #718096;
-    font-size: clamp(16px, 3.5vw, 21px);
-  }
-
-  #settingsDialog .profile-divider {
-    height: 1px;
-    background: #e5e7eb;
-    margin: 28px 0;
-  }
-
-  #settingsDialog .profile-table {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.58fr);
-  }
-
-  #settingsDialog .profile-table > div {
-    min-width: 0;
-    padding: 13px 0;
-    border-bottom: 1px solid #e5e7eb;
-    font-size: clamp(14px, 3.5vw, 18px);
-    overflow-wrap: anywhere;
-  }
-
-  #settingsDialog .profile-table > .profile-table-heading {
-    padding-top: 0;
-    padding-bottom: 15px;
-    font-size: clamp(16px, 3.8vw, 20px);
-    font-weight: 700;
-  }
-
-  #settingsDialog .profile-table > div:nth-last-child(-n+2) {
-    border-bottom: 0;
-  }
-
-  #settingsDialog .profile-token-title {
-    margin: 0 0 12px;
-    font-size: clamp(20px, 4vw, 25px);
-  }
-
-  #settingsDialog #profileToken {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    padding: 8px 0;
-    border: 0;
-    outline: 0;
-    background: transparent;
-    color: #718096;
-    font: inherit;
-    font-size: 16px;
-    letter-spacing: 3px;
-    box-shadow: none;
-  }
-
-  #settingsDialog .dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 9px;
-    margin-top: 28px;
-  }
-
-  #settingsDialog #closeSettings {
-    display: none;
-  }
-
-  #settingsDialog #closeSettings2 {
-    order: 2;
-  }
-
-  #settingsDialog #logoutBtn {
-    order: 1;
-  }
-
-  #settingsDialog #saveSettingsButton {
-    order: 3;
-  }
-
-  #settingsDialog #loginFields {
-    margin-top: 0;
-  }
-
-  #settingsDialog #loginFields .dialog-header {
-    margin-bottom: 18px;
-  }
-
-  @media (max-width: 480px) {
-    #settingsDialog {
-      width: calc(100% - 20px);
-      max-height: 90vh;
-      max-height: 90dvh;
-      padding: 19px;
-      border-radius: 14px;
-    }
-
-    #settingsDialog .profile-heading {
-      margin-bottom: 25px;
-    }
-
-    #settingsDialog .profile-divider {
-      margin: 22px 0;
-    }
-
-    #settingsDialog .profile-table > div {
-      padding: 12px 0;
-    }
-
-    #settingsDialog .dialog-footer {
-      gap: 7px;
-    }
-
-    #settingsDialog .dialog-footer .btn {
-      padding: 9px 11px;
-      font-size: 12px;
-    }
-  }
-</style>
+<!-- HTML fragment loaded by index.html; keep app element IDs unchanged. -->
 
 <dialog class="dialog" id="settingsDialog">
+
   <form id="settingsForm">
 
-    <!-- Přihlášený účet -->
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">PŘIHLÁŠENÝ ÚČET</p>
+        <h2>Uživatel</h2>
+      </div>
+      <button class="icon-btn" id="closeSettings" type="button">×</button>
+    </div>
+
+    <!-- Informace o přihlášeném uživateli -->
     <div class="user-profile-info hidden" id="userProfileInfo">
 
-      <div class="profile-heading">
-        <h2>Přihlášený účet</h2>
-        <span class="profile-status">Přihlášen</span>
+      <div class="panel">
+        <span>Jméno</span>
+        <strong id="settingsFirstName">—</strong>
       </div>
 
-      <div>
-        <div class="profile-name">
-          <span id="settingsFirstName">—</span>
-          <span id="settingsLastName">—</span>
+      <div class="panel">
+        <span>Příjmení</span>
+        <strong id="settingsLastName">—</strong>
+      </div>
+
+      <div class="panel">
+        <span>Status / oprávnění</span>
+        <strong id="settingsRole">—</strong>
+      </div>
+
+      <div class="panel full">
+        <label class="field">
+          <span>GitHub token</span>
+          <input
+            id="profileToken"
+            type="password"
+            value=""
+            readonly
+            autocomplete="off"
+          />
+        </label>
+      </div>
+
+      <div class="panel full">
+        <h3>Aktivita uživatele</h3>
+
+        <div class="form-grid">
+          <div>
+            <span>Poslední přihlášení</span>
+            <strong id="settingsLastLogin">—</strong>
+          </div>
+
+          <div>
+            <span>Provedené operace</span>
+            <strong id="settingsOperationCount">—</strong>
+          </div>
+
+          <div class="full">
+            <span>Verze aplikace</span>
+            <strong id="appVersion">—</strong>
+          </div>
         </div>
-
-        <p class="profile-subtitle">Uživatel skladu</p>
       </div>
-
-      <div class="profile-divider"></div>
-
-      <div class="profile-table">
-
-        <div class="profile-table-heading">Informace</div>
-        <div class="profile-table-heading">Hodnota</div>
-
-        <div>Status</div>
-        <div id="settingsRole">—</div>
-
-        <div>Poslední přihlášení</div>
-        <div id="settingsLastLogin">—</div>
-
-        <div>Provedené operace</div>
-        <div id="settingsOperationCount">—</div>
-
-        <div>Verze aplikace</div>
-        <div id="appVersion">1.0</div>
-
-      </div>
-
-      <div class="profile-divider"></div>
-
-      <h3 class="profile-token-title">GitHub token</h3>
-
-      <input
-        id="profileToken"
-        type="password"
-        value=""
-        readonly
-        autocomplete="off"
-        aria-label="Skrytý GitHub token"
-      />
 
     </div>
 
-    <!-- Přihlášení -->
+    <!-- Přihlašovací formulář -->
     <div class="form-grid settings-grid" id="loginFields">
-
-      <div class="dialog-header">
-        <div>
-          <p class="eyebrow">PŘIHLÁŠENÍ</p>
-          <h2>Uživatel</h2>
-        </div>
-        <button class="icon-btn" id="closeSettings" type="button">×</button>
-      </div>
 
       <label class="field full">
         <span>GitHub token</span>
@@ -281,6 +101,7 @@
     </div>
 
   </form>
+
 </dialog>
 
 
