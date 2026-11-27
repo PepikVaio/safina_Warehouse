@@ -40,15 +40,31 @@
 
       <div class="profile-token">
         <label class="field">
-          <span>GitHub token</span>
+          <span>Nový GitHub token</span>
           <input
             id="profileToken"
             type="password"
             value=""
-            readonly
+            placeholder="Vlož nový GitHub token"
             autocomplete="off"
           />
         </label>
+
+        <div class="form-actions">
+          <button
+            class="btn btn-primary"
+            id="saveProfileToken"
+            type="button"
+          >
+            Uložit nový token
+          </button>
+        </div>
+
+        <p
+          class="invite-status"
+          id="profileTokenStatus"
+          role="status"
+        ></p>
       </div>
 
     </div>
