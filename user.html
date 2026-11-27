@@ -37,36 +37,57 @@
       </div>
     </div>
 
-    <div style="display: flex; gap: 8px; margin-top: 16px; width: 100%;">
-      <button
-        class="btn btn-light"
-        id="listUsersBtn"
-        style="flex: 1;"
-        type="button"
-        disabled
-      >
-        Seznam uživatelů
-      </button>
+    <div
+      class="dialog-footer"
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: nowrap;
+      "
+    >
+      <div style="display: flex; gap: 4px; flex-shrink: 0;">
+        <button
+          class="btn btn-light"
+          id="listUsersBtn"
+          type="button"
+          disabled
+          style="padding-left: 8px; padding-right: 8px; white-space: nowrap;"
+        >
+          Seznam uživatelů
+        </button>
 
-      <button
-        class="btn btn-light"
-        id="addUserBtn"
-        style="flex: 1;"
-        type="button"
-        disabled
-      >
-        Přidat uživatele
-      </button>
-    </div>
+        <button
+          class="btn btn-light"
+          id="addUserBtn"
+          type="button"
+          disabled
+          style="padding-left: 8px; padding-right: 8px; white-space: nowrap;"
+        >
+          Přidat uživatele
+        </button>
+      </div>
 
-    <div class="dialog-footer" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: nowrap;">
-      <button class="btn btn-light" id="logoutBtn" type="button">
-        Odhlásit
-      </button>
+      <div style="display: flex; gap: 4px; flex-shrink: 0;">
+        <button
+          class="btn btn-light"
+          id="logoutBtn"
+          type="button"
+          style="padding-left: 8px; padding-right: 8px; white-space: nowrap;"
+        >
+          Odhlásit
+        </button>
 
-      <button class="btn btn-light" id="cancelSettings" type="button">
-        Zrušit
-      </button>
+        <button
+          class="btn btn-light"
+          id="cancelSettings"
+          type="button"
+          style="padding-left: 8px; padding-right: 8px; white-space: nowrap;"
+        >
+          Zrušit
+        </button>
+      </div>
     </div>
   </div>
 </dialog>
