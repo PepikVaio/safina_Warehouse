@@ -97,41 +97,58 @@ function movementElement(name, mode=movementMode) {
 // =========================================================
 
 async function init() {
-  bind();
-  readInviteFromUrl();
-  updateIdentity();
-  applyPermissions();
+  try {
+    bind();
+    readInviteFromUrl();
+    updateIdentity();
+    applyPermissions();
 
-  const p=profile();
-  fillSettings(p);
+    const p=profile();
+    fillSettings(p);
 
-  if(pendingInvite) {
-    setState("Čeká se na potvrzení pozvánky");
-  } else if(isConfigured(p)) {
-    try {
-      const allowed=await loadAll();
+    if(pendingInvite) {
+      setState("Čeká se na potvrzení pozvánky");
+    } else if(isConfigured(p)) {
+      try {
+        const allowed=await loadAll();
 
-      if(!allowed) {
+        if(!allowed) {
+          openSettings();
+        }
+      } catch(e) {
+        setState("Chyba připojení");
+        toast(e.message);
         openSettings();
       }
-    } catch(e) {
-      setState("Chyba připojení");
-      toast(e.message);
+    } else {
+      setState("Nastav připojení");
       openSettings();
     }
-  } else {
-    setState("Nastav připojení");
-    openSettings();
-  }
 
-  render();
+    render();
 
-  if(pendingInvite) {
-    $("inviteDescription").textContent =
-      `Pozvánka pro ${pendingInvite.firstName} ${pendingInvite.lastName} · ${roleLabel(pendingInvite.role)}.`;
+    if(pendingInvite) {
+      const description=$("inviteDescription");
+      const saveStatus=$("inviteSaveStatus");
+      const inviteDialog=$("inviteDialog");
 
-    $("inviteSaveStatus").textContent="";
-    $("inviteDialog").showModal();
+      if(description) {
+        description.textContent =
+          `Pozvánka pro ${pendingInvite.firstName} ${pendingInvite.lastName} · ${roleLabel(pendingInvite.role)}.`;
+      }
+
+      if(saveStatus) {
+        saveStatus.textContent="";
+      }
+
+      if(inviteDialog && !inviteDialog.open) {
+        inviteDialog.showModal();
+      }
+    }
+  } catch(e) {
+    console.error("Chyba inicializace:",e);
+    setState("Chyba inicializace");
+    toast(`Aplikaci se nepodařilo spustit: ${e.message}`);
   }
 }
 
@@ -141,122 +158,110 @@ async function init() {
 // =========================================================
 
 function bind() {
-  $("settingsBtn").onclick=openSettings;
-
-  $("userManagementBtn").onclick=()=>openUsers("list");
-
-  const listUsersBtn=$("listUsersBtn");
-  if(listUsersBtn) {
-    listUsersBtn.onclick=()=>openUsers("list");
-  }
-
-  const addUserBtn=$("addUserBtn");
-  if(addUserBtn) {
-    addUserBtn.onclick=()=>openUsers("add");
-  }
-
-  // Seznam uživatelů
-  const closeUsers=$("closeUsers");
-  if(closeUsers) {
-    closeUsers.onclick=()=>$("listUsersDialog").close();
-  }
-
-  const closeUsersList=$("closeUsersList");
-  if(closeUsersList) {
-    closeUsersList.onclick=()=>$("listUsersDialog").close();
-  }
-
-  // Přidání uživatele
-  const closeAddUser=$("closeAddUser");
-  if(closeAddUser) {
-    closeAddUser.onclick=()=>$("addUserDialog").close();
-  }
-
-  const closeAddUser2=$("closeAddUser2");
-  if(closeAddUser2) {
-    closeAddUser2.onclick=()=>$("addUserDialog").close();
-  }
-
-  $("userForm").onsubmit=saveUser;
-  $("copyInvite").onclick=shareInviteLink;
-  $("copyInviteOnly").onclick=copyInviteLink;
-
-  $("logoutBtn").onclick=logout;
-  $("saveInvite").onclick=saveInvite;
-
-  // Profil uživatele
-  $("closeSettings").onclick=()=>$("settingsDialog").close();
-
-  const closeSettings2=$("closeSettings2");
-  if(closeSettings2) {
-    closeSettings2.onclick=()=>$("settingsDialog").close();
-  }
-
-  const cancelSettings=$("cancelSettings");
-  if(cancelSettings) {
-    cancelSettings.onclick=()=>$("settingsDialog").close();
-  }
-
-  $("settingsForm").onsubmit=saveSettings;
-
-  // Karty náhradních dílů
-  $("newPartBtn").onclick=()=>{
-    if(requireWriter()) openPart();
+  const on=(id,event,fn)=>{
+    const el=$(id);
+    if(el) el.addEventListener(event,fn);
   };
 
-  $("closeDialog").onclick=$("cancelPart").onclick=()=>$("partDialog").close();
-  $("partForm").onsubmit=savePart;
+  // Přihlášení a profil
+  on("settingsBtn","click",openSettings);
+  on("userManagementBtn","click",()=>openUsers("list"));
 
-  $("addSupplier").onclick=()=>addSupplierRow();
-  $("partImage").onchange=previewImage;
+  on("listUsersBtn","click",()=>openUsers("list"));
+  on("addUserBtn","click",()=>openUsers("add"));
+
+  on("logoutBtn","click",logout);
+  on("settingsForm","submit",saveSettings);
+
+  on("closeSettings","click",()=>$("settingsDialog")?.close());
+  on("closeSettings2","click",()=>$("settingsDialog")?.close());
+  on("cancelSettings","click",()=>$("settingsDialog")?.close());
+
+  // Seznam uživatelů
+  on("closeUsers","click",()=>$("listUsersDialog")?.close());
+  on("closeUsersList","click",()=>$("listUsersDialog")?.close());
+
+  // Přidání uživatele
+  on("userForm","submit",saveUser);
+  on("closeAddUser","click",()=>$("addUserDialog")?.close());
+  on("closeAddUser2","click",()=>$("addUserDialog")?.close());
+
+  on("copyInvite","click",shareInviteLink);
+  on("copyInviteOnly","click",copyInviteLink);
+  on("saveInvite","click",saveInvite);
+
+  // Karty náhradních dílů
+  on("newPartBtn","click",()=>{
+    if(requireWriter()) openPart();
+  });
+
+  on("closeDialog","click",()=>$("partDialog")?.close());
+  on("cancelPart","click",()=>$("partDialog")?.close());
+  on("partForm","submit",savePart);
+
+  on("addSupplier","click",()=>addSupplierRow());
+  on("partImage","change",previewImage);
 
   // Vyhledávání a filtry
-  $("searchInput").oninput=render;
-  $("stockFilter").onchange=render;
+  on("searchInput","input",render);
+  on("stockFilter","change",render);
 
   document.querySelectorAll(".nav-btn").forEach(b=>{
-    b.onclick=()=>switchView(b.dataset.view);
+    b.addEventListener("click",()=>switchView(b.dataset.view));
   });
 
   // Příjem a výdej
   ["in","out"].forEach(mode=>{
-    movementElement("form",mode).onsubmit=e=>saveMovement(e,mode);
+    const form=movementElement("form",mode);
+    const cancel=movementElement("cancel",mode);
+    const part=movementElement("part",mode);
+    const location=movementElement("location",mode);
 
-    movementElement("cancel",mode).onclick=()=>switchView("stock");
+    if(form) {
+      form.addEventListener("submit",e=>saveMovement(e,mode));
+    }
 
-    movementElement("part",mode).onchange=()=>updateMovementLocations(mode);
+    if(cancel) {
+      cancel.addEventListener("click",()=>switchView("stock"));
+    }
 
-    movementElement("location",mode).onchange=()=>{
-      const fields=movementElement("newLocationFields",mode);
-      if(fields) {
-        fields.classList.toggle(
-          "hidden",
-          movementElement("location",mode).value!=="new"
-        );
-      }
-    };
+    if(part) {
+      part.addEventListener("change",()=>updateMovementLocations(mode));
+    }
+
+    if(location) {
+      location.addEventListener("change",()=>{
+        const fields=movementElement("newLocationFields",mode);
+
+        if(fields) {
+          fields.classList.toggle("hidden",location.value!=="new");
+        }
+      });
+    }
   });
 
   // Detail dílu
-  $("closeDetail").onclick=$("detailClose2").onclick=()=>$("detailDialog").close();
+  on("closeDetail","click",()=>$("detailDialog")?.close());
+  on("detailClose2","click",()=>$("detailDialog")?.close());
 
-  $("detailEdit").onclick=()=>{
+  on("detailEdit","click",()=>{
     const id=currentDetailId;
-    $("detailDialog").close();
-    if(requireWriter()) openPart(id);
-  };
+    $("detailDialog")?.close();
 
-  $("detailStockIn").onclick=()=>openMovementFromDetail("in");
-  $("detailStockOut").onclick=()=>openMovementFromDetail("out");
+    if(requireWriter()) openPart(id);
+  });
+
+  on("detailStockIn","click",()=>openMovementFromDetail("in"));
+  on("detailStockOut","click",()=>openMovementFromDetail("out"));
 
   // Tisk
-  $("detailPrint").onclick=()=>showPrint(currentDetailId);
-  $("closePrint").onclick=()=>$("printDialog").close();
-  $("printBtn").onclick=()=>window.print();
+  on("detailPrint","click",()=>showPrint(currentDetailId));
+  on("closePrint","click",()=>$("printDialog")?.close());
+  on("printBtn","click",()=>window.print());
 
   // Historie
-  $("historySearch").oninput=renderHistory;
-  $("historyFilter").onchange=renderHistory;
+  on("historySearch","input",renderHistory);
+  on("historyFilter","change",renderHistory);
 }
 
 
@@ -265,7 +270,8 @@ function bind() {
 // =========================================================
 
 function setState(s) {
-  $("saveState").textContent=s;
+  const el=$("saveState");
+  if(el) el.textContent=s;
 }
 
 function updateIdentity() {
@@ -282,9 +288,14 @@ function updateIdentity() {
 function updateUserSettings() {
   const configured=!!currentUser;
 
-  $("userProfileInfo").classList.toggle("hidden",!configured);
-  $("loginFields").classList.toggle("hidden",configured);
-  $("saveSettingsButton").classList.toggle("hidden",configured);
+  const profileInfo=$("userProfileInfo");
+  if(profileInfo) profileInfo.classList.toggle("hidden",!configured);
+
+  const loginFields=$("loginFields");
+  if(loginFields) loginFields.classList.toggle("hidden",configured);
+
+  const saveButton=$("saveSettingsButton");
+  if(saveButton) saveButton.classList.toggle("hidden",configured);
 
   const nameField=$("settingsUserName");
   if(nameField) {
@@ -300,20 +311,29 @@ function updateUserSettings() {
       : "";
   }
 
-  $("settingsFirstName").textContent=configured
-    ? currentUser.firstName
-    : "Přihlásit";
+  const firstName=$("settingsFirstName");
+  if(firstName) {
+    firstName.textContent=configured
+      ? currentUser.firstName
+      : "Přihlásit";
+  }
 
-  $("settingsLastName").textContent=configured
-    ? currentUser.lastName
-    : "";
+  const lastName=$("settingsLastName");
+  if(lastName) {
+    lastName.textContent=configured
+      ? currentUser.lastName
+      : "";
+  }
 
-  $("settingsRole").textContent=
-    currentAccessStatus==="deactive"
-      ? "Deaktivováno"
-      : currentAccessStatus==="removed"
-        ? "Přístup odebrán"
-        : roleLabel(currentRole);
+  const role=$("settingsRole");
+  if(role) {
+    role.textContent=
+      currentAccessStatus==="deactive"
+        ? "Deaktivováno"
+        : currentAccessStatus==="removed"
+          ? "Přístup odebrán"
+          : roleLabel(currentRole);
+  }
 
   const loginField=$("settingsLastLogin");
   if(loginField) {
@@ -341,11 +361,19 @@ function updateUserSettings() {
     versionField.textContent="—";
   }
 
-  $("logoutBtn").classList.toggle("hidden",!configured);
+  const logoutButton=$("logoutBtn");
+  if(logoutButton) {
+    logoutButton.classList.toggle("hidden",!configured);
+  }
 }
 
 function toast(s) {
   const t=$("toast");
+  if(!t) {
+    console.warn(s);
+    return;
+  }
+
   t.textContent=s;
   t.classList.add("show");
 
@@ -379,7 +407,8 @@ function requireWriter() {
 // =========================================================
 
 function fillSettings(p) {
-  $("accessToken").value=p.token||"";
+  const token=$("accessToken");
+  if(token) token.value=p.token||"";
 }
 
 function openSettings() {
@@ -390,7 +419,7 @@ function openSettings() {
     ? $("settingsDialog")
     : $("loginDialog");
 
-  if(!dialog.open) {
+  if(dialog && !dialog.open) {
     dialog.showModal();
   }
 }
@@ -398,7 +427,7 @@ function openSettings() {
 async function saveSettings(e) {
   e.preventDefault();
 
-  const token=$("accessToken").value.trim();
+  const token=$("accessToken")?.value.trim();
 
   if(!token) {
     toast("Vlož GitHub token.");
@@ -415,7 +444,7 @@ async function saveSettings(e) {
       return;
     }
 
-    $("loginDialog").close();
+    $("loginDialog")?.close();
     updateUserSettings();
     toast("Přístup byl uložen.");
 
@@ -742,12 +771,17 @@ async function saveInvite() {
   if(!pendingInvite) return;
 
   const button=$("saveInvite");
+  if(!button) return;
+
   const oldProfile=profile();
 
   button.disabled=true;
   button.textContent="Ukládám…";
 
-  $("inviteSaveStatus").textContent="Ověřuji platnost pozvánky…";
+  const saveStatus=$("inviteSaveStatus");
+  if(saveStatus) {
+    saveStatus.textContent="Ověřuji platnost pozvánky…";
+  }
 
   try {
     localStorage.setItem(
@@ -757,7 +791,9 @@ async function saveInvite() {
 
     await verifyPendingInvite();
 
-    $("inviteSaveStatus").textContent="Ověřuji přístup ke skladu…";
+    if(saveStatus) {
+      saveStatus.textContent="Ověřuji přístup ke skladu…";
+    }
 
     const allowed=await loadAll();
 
@@ -773,7 +809,7 @@ async function saveInvite() {
 
     pendingInvite=null;
 
-    $("inviteDialog").close();
+    $("inviteDialog")?.close();
 
     toast(`Přístup pro ${name} byl uložen.`);
 
@@ -786,8 +822,10 @@ async function saveInvite() {
       localStorage.removeItem(PROFILE_KEY);
     }
 
-    $("inviteSaveStatus").textContent=
-      `Přístup se nepodařilo uložit: ${e.message}`;
+    if(saveStatus) {
+      saveStatus.textContent=
+        `Přístup se nepodařilo uložit: ${e.message}`;
+    }
 
     toast(`Pozvánku se nepodařilo aktivovat: ${e.message}`);
 
@@ -817,23 +855,29 @@ async function openUsers(mode="list") {
     return;
   }
 
+  const settingsDialog=$("settingsDialog");
+  const listDialog=$("listUsersDialog");
+  const addDialog=$("addUserDialog");
+
+  if(!listDialog||!addDialog) {
+    toast("Chybí dialog správy uživatelů. Zkontroluj list-users.html a add-user.html.");
+    return;
+  }
+
   try {
     await refreshUsers();
 
-    const settingsDialog=$("settingsDialog");
     if(settingsDialog?.open) {
       settingsDialog.close();
     }
 
     if(mode==="list") {
-      const addDialog=$("addUserDialog");
-      if(addDialog?.open) {
+      if(addDialog.open) {
         addDialog.close();
       }
 
       renderUsers();
 
-      const listDialog=$("listUsersDialog");
       if(!listDialog.open) {
         listDialog.showModal();
       }
@@ -842,27 +886,40 @@ async function openUsers(mode="list") {
     }
 
     if(mode==="add") {
-      const listDialog=$("listUsersDialog");
-      if(listDialog?.open) {
+      if(listDialog.open) {
         listDialog.close();
       }
 
-      $("userForm").reset();
-      $("userForm").classList.remove("hidden");
+      const userForm=$("userForm");
+      const inviteResult=$("inviteResult");
+      const userSaveStatus=$("userSaveStatus");
 
-      $("inviteResult").classList.add("hidden");
-      $("userSaveStatus").textContent="";
+      if(!userForm||!inviteResult) {
+        throw new Error("Chybí formulář pro přidání uživatele.");
+      }
 
-      const addDialog=$("addUserDialog");
+      userForm.reset();
+      userForm.classList.remove("hidden");
+
+      inviteResult.classList.add("hidden");
+
+      if(userSaveStatus) {
+        userSaveStatus.textContent="";
+      }
+
       if(!addDialog.open) {
         addDialog.showModal();
       }
 
-      $("newUserFirst").focus();
-      $("newUserFirst").scrollIntoView({
-        behavior:"smooth",
-        block:"center"
-      });
+      const firstName=$("newUserFirst");
+
+      if(firstName) {
+        firstName.focus();
+        firstName.scrollIntoView({
+          behavior:"smooth",
+          block:"center"
+        });
+      }
     }
 
   } catch(e) {
@@ -887,6 +944,11 @@ async function refreshUsers() {
 
 function renderUsers() {
   const list=$("usersList");
+
+  if(!list) {
+    toast("Chybí seznam uživatelů.");
+    return;
+  }
 
   const sorted=usersData.users
     .map((u,index)=>({u,index}))
@@ -1400,11 +1462,17 @@ function applyPermissions() {
     b.disabled=!writer;
   });
 
-  $("newPartBtn").classList.toggle("permission-disabled",!writer);
-  $("detailEdit").classList.toggle("permission-disabled",!writer);
+  const newPartBtn=$("newPartBtn");
+  if(newPartBtn) newPartBtn.classList.toggle("permission-disabled",!writer);
 
-  $("detailStockIn").disabled=!writer;
-  $("detailStockOut").disabled=!writer;
+  const detailEdit=$("detailEdit");
+  if(detailEdit) detailEdit.classList.toggle("permission-disabled",!writer);
+
+  const detailStockIn=$("detailStockIn");
+  if(detailStockIn) detailStockIn.disabled=!writer;
+
+  const detailStockOut=$("detailStockOut");
+  if(detailStockOut) detailStockOut.disabled=!writer;
 }
 
 
