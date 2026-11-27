@@ -11,6 +11,7 @@ let currentUser = null;
 let usersData = { users: [] }, usersFileSha = null, pendingInvite = null;
 let currentImageData = null;
 let lastPartTap = { id: null, at: 0 };
+let currentLastLogin = null;
 
 const total = p => (p.locations || []).reduce((n,l)=>n + (Number(l.qty)||0),0);
 
@@ -39,8 +40,6 @@ const profile = () => {
 };
 
 const isConfigured = p => !!p.token;
-
-// Role je určena výhradně podle SHA-256 tokenu v souboru users.json.
 const isWriter = () => currentRole === "write" || currentRole === "admin";
 const isAdmin = () => currentRole === "admin";
 
@@ -76,7 +75,6 @@ function movementElement(name, mode=movementMode) {
   };
 
   const ending = suffix[name];
-
   return ending ? $(`${prefix}${ending}`) : null;
 }
 
@@ -137,8 +135,6 @@ function bind() {
   $("closeSettings").onclick=$("closeSettings2").onclick=()=>$("settingsDialog").close();
 
   $("settingsForm").onsubmit=saveSettings;
-  $("adminToolsToggle").onclick=toggleAdminTools;
-  $("testConnection").onclick=testConnection;
 
   $("newPartBtn").onclick=()=>{
     if(requireWriter()) openPart();
@@ -156,7 +152,6 @@ function bind() {
   document.querySelectorAll(".nav-btn").forEach(b=>{
     b.onclick=()=>switchView(b.dataset.view);
   });
-
 
   // Samostatné události pro příjem a výdej.
   ["in","out"].forEach(mode=>{
@@ -176,7 +171,6 @@ function bind() {
       }
     };
   });
-
 
   $("closeDetail").onclick=$("detailClose2").onclick=()=>$("detailDialog").close();
 
@@ -219,6 +213,7 @@ function updateIdentity() {
 
 function updateUserSettings() {
   const configured=!!currentUser;
+  const p=profile();
 
   $("userProfileInfo").classList.toggle("hidden",!configured);
   $("loginFields").classList.toggle("hidden",configured);
@@ -228,21 +223,38 @@ function updateUserSettings() {
   $("settingsLastName").textContent=currentUser?.lastName||"—";
   $("settingsRole").textContent=roleLabel(currentRole);
 
-  $("logoutBtn").classList.toggle("hidden",!configured);
-}
-
-function toggleAdminTools() {
-  const panel=$("adminTools");
-  const button=$("adminToolsToggle");
-  const opening=panel.classList.contains("hidden");
-
-  panel.classList.toggle("hidden",!opening);
-  button.setAttribute("aria-expanded",String(opening));
-
-  if(!opening) {
-    $("tokenHashOutput").classList.add("hidden");
-    $("connectionStatus").textContent="";
+  // Token je zobrazen pouze jako skryté heslo.
+  const tokenField=$("profileToken");
+  if(tokenField) {
+    tokenField.value=configured ? (p.token||"") : "";
   }
+
+  // Poslední přihlášení.
+  const loginField=$("settingsLastLogin");
+  if(loginField) {
+    loginField.textContent=currentLastLogin
+      ? dateTimeText(currentLastLogin)
+      : "—";
+  }
+
+  // Počet operací aktuálního uživatele.
+  const operationField=$("settingsOperationCount");
+  if(operationField) {
+    const userName=currentUser
+      ? `${currentUser.firstName} ${currentUser.lastName}`
+      : "";
+
+    const count=historyItems.filter(h=>h.user===userName).length;
+    operationField.textContent=configured ? String(count) : "—";
+  }
+
+  // Verze aplikace není zatím v projektu definována.
+  const versionField=$("appVersion");
+  if(versionField) {
+    versionField.textContent="—";
+  }
+
+  $("logoutBtn").classList.toggle("hidden",!configured);
 }
 
 function toast(s) {
@@ -275,18 +287,11 @@ function requireWriter() {
 
 function fillSettings(p) {
   $("accessToken").value=p.token||"";
-  $("tokenHashOutput").value="";
 }
 
 function openSettings() {
-  $("connectionStatus").textContent="";
-  $("adminTools").classList.add("hidden");
-  $("adminToolsToggle").setAttribute("aria-expanded","false");
-  $("tokenHashOutput").classList.add("hidden");
-
   fillSettings(profile());
   updateUserSettings();
-
   $("settingsDialog").showModal();
 }
 
@@ -296,7 +301,7 @@ function saveSettings(e) {
   const token=$("accessToken").value.trim();
 
   if(!token) {
-    $("connectionStatus").textContent="Vlož GitHub token.";
+    toast("Vlož GitHub token.");
     return;
   }
 
@@ -310,7 +315,6 @@ function saveSettings(e) {
     setState("Chyba připojení");
     toast(e.message);
     openSettings();
-    $("connectionStatus").textContent=e.message;
   });
 }
 
@@ -391,11 +395,10 @@ async function sha256Token(token) {
 // OVĚŘENÍ ROLE
 // =========================================================
 
-// Role je načítána výhradně podle SHA-256 otisku tokenu v users.json.
-
 async function loadRole() {
   currentRole="read";
   currentUser=null;
+  currentLastLogin=null;
 
   const p=profile();
 
@@ -451,6 +454,11 @@ async function loadRole() {
 
   currentRole=match.role;
 
+  // Uloží čas úspěšného ověření přihlášení pro tento účet na tomto zařízení.
+  const loginKey=`sklad-last-login-${tokenHash}`;
+  currentLastLogin=new Date().toISOString();
+  localStorage.setItem(loginKey,currentLastLogin);
+
   updateIdentity();
 }
 
@@ -488,6 +496,7 @@ async function loadAll() {
 
   applyPermissions();
   render();
+  updateUserSettings();
 }
 
 
@@ -599,6 +608,7 @@ function logout() {
 
   currentUser=null;
   currentRole="read";
+  currentLastLogin=null;
   usersData={users:[]};
   usersFileSha=null;
 
@@ -901,44 +911,6 @@ async function shareInviteLink() {
 
 
 // =========================================================
-// TEST PŘIPOJENÍ
-// =========================================================
-
-async function testConnection() {
-  try {
-    const token=$("accessToken").value.trim();
-
-    if(!token) {
-      throw new Error("Vlož GitHub token.");
-    }
-
-    const r=await fetch(
-      `https://api.github.com/repos/${encodeURIComponent(REPO_OWNER)}/${encodeURIComponent(REPO_NAME)}`,
-      {
-        headers:{
-          Accept:"application/vnd.github+json",
-          Authorization:`Bearer ${token}`,
-          "X-GitHub-Api-Version":"2022-11-28"
-        }
-      }
-    );
-
-    const j=await r.json();
-
-    if(!r.ok) {
-      throw new Error(j.message||`GitHub API: ${r.status}`);
-    }
-
-    $("connectionStatus").textContent=
-      `Připojení funguje.\nRepozitář: ${j.full_name}.`;
-
-  } catch(e) {
-    $("connectionStatus").textContent=`Chyba: ${e.message}`;
-  }
-}
-
-
-// =========================================================
 // UKLÁDÁNÍ SOUBORŮ
 // =========================================================
 
@@ -1017,6 +989,7 @@ async function commitAll(newParts,newHistory) {
 
   applyPermissions();
   render();
+  updateUserSettings();
 }
 
 async function uploadImage(file,id) {
@@ -1062,7 +1035,6 @@ function applyPermissions() {
   const writer=isWriter();
 
   $("userManagementBtn").classList.toggle("hidden",!isAdmin());
-  $("adminToolsToggle").classList.toggle("hidden",isConfigured(profile()));
 
   updateUserSettings();
 
@@ -1078,7 +1050,6 @@ function applyPermissions() {
     if(el) el.disabled=!writer;
   });
 
-  // Oprávnění pro oba samostatné formuláře.
   ["in","out"].forEach(mode=>{
     const submit=movementElement("submit",mode);
 
@@ -1512,7 +1483,6 @@ function updateMovementLocations(mode=movementMode) {
     )
     .join("");
 
-  // Nové umístění je povoleno pouze při příjmu.
   if(mode==="in") {
     locationSelect.innerHTML+='<option value="new">＋ Zadat nové umístění</option>';
   }
@@ -1789,32 +1759,6 @@ function showPrint(id) {
 
   $("printDialog").showModal();
 }
-
-
-// =========================================================
-// SHA-256 OTISK TOKENU
-// =========================================================
-
-async function generateTokenHash() {
-  try {
-    const token=$("accessToken").value.trim();
-
-    if(!token) {
-      throw new Error("Nejdříve vlož GitHub token.");
-    }
-
-    $("tokenHashOutput").value=await sha256Token(token);
-    $("tokenHashOutput").classList.remove("hidden");
-
-    toast("SHA-256 otisk tokenu je připraven.");
-
-  } catch(e) {
-    $("tokenHashOutput").value="";
-    toast(e.message);
-  }
-}
-
-$("generateTokenHash").onclick=generateTokenHash;
 
 
 // =========================================================
