@@ -28,3 +28,12 @@ button:disabled,.permission-disabled:disabled{opacity:.42!important;cursor:not-a
 /* Správa uživatelů a pozvánky */
 .users-list{display:grid;gap:8px;margin:18px 0 24px}.user-row{display:grid;grid-template-columns:minmax(0,1fr) 180px auto;gap:10px;align-items:center;padding:11px 12px;border:1px solid #e5eaf1;border-radius:10px;background:#fbfcfe}.user-row-info strong,.user-row-info small{display:block}.user-row-info strong{font-size:13px}.user-row-info small{font-size:11px;color:#718096;margin-top:3px}.user-row select{font:inherit;font-size:13px;padding:8px;border:1px solid #dfe5ed;border-radius:8px;background:white}.invite-result{margin-top:20px;padding:14px;border:1px solid #dbe5f5;border-radius:10px;background:#f7faff}.invite-result p{font-size:12px;line-height:1.5}.invite-result textarea{width:100%;padding:10px;border:1px solid #dfe5ed;border-radius:8px;font:inherit;font-size:13px;overflow-wrap:anywhere;resize:vertical}.users-list+.form-grid{margin-top:10px}#usersDialog h3{font-size:16px;margin:20px 0 8px}#inviteDialog{max-width:480px}#inviteDialog p{line-height:1.55;font-size:13px;margin:16px 0}.top-actions #userManagementBtn{background:#e8eefc;color:#234b9a}
 @media(max-width:760px){.user-row{grid-template-columns:1fr 1fr}.user-row-info{grid-column:1/-1}.user-row .user-remove{grid-column:2}.user-row select{grid-column:1}.top-actions #userManagementBtn{order:3}}
+
+/* Profil přihlášeného uživatele */
+.user-profile-info{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:18px;padding:16px;border:1px solid #e5eaf1;border-radius:12px;background:#fbfcfe}
+.user-profile-info span,.user-profile-info strong{display:block}
+.user-profile-info span{font-size:11px;color:#718096;margin-bottom:5px}
+.user-profile-info strong{font-size:14px;color:#172033}
+.user-profile-info .profile-actions{grid-column:1/-1;display:flex;justify-content:flex-end;border-top:1px solid #e5eaf1;padding-top:12px;margin-top:3px}
+.invite-status{font-size:12px;line-height:1.5;color:#475467;min-height:0}
+@media(max-width:760px){.user-profile-info{grid-template-columns:1fr 1fr}.user-profile-info .profile-actions{grid-column:1/-1}}
