@@ -3,18 +3,17 @@
 <dialog class="dialog" id="settingsDialog">
   <div>
     <div class="dialog-header">
-      <button class="icon-btn" id="closeSettings" type="button">×</button>
-
-      <div style="flex: 1; text-align: right;">
+      <div style="flex: 1;">
         <p class="eyebrow">PŘIHLÁŠENÝ ÚČET</p>
         <h2>
           <span id="settingsFirstName">—</span>
           <span id="settingsLastName">—</span>
         </h2>
+        <p class="muted" id="settingsAccountType"></p>
       </div>
-    </div>
 
-    <p class="muted" id="settingsAccountType" style="text-align: right;"></p>
+      <button class="icon-btn" id="closeSettings" type="button">×</button>
+    </div>
 
     <div class="user-profile-info hidden" id="userProfileInfo">
       <div class="profile-info-grid">
@@ -35,19 +34,23 @@
       </div>
     </div>
 
-    <div class="dialog-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: nowrap;">
-      <div style="display: flex; gap: 6px;">
-        <button class="btn btn-light" id="listUsersBtn" type="button" disabled>
-          Seznam uživatelů
-        </button>
+    <div style="display: flex; gap: 6px; margin-top: 16px;">
+      <button class="btn btn-light" id="listUsersBtn" type="button" disabled>
+        Seznam uživatelů
+      </button>
 
-        <button class="btn btn-light" id="addUserBtn" type="button" disabled>
-          Přidat uživatele
-        </button>
-      </div>
+      <button class="btn btn-light" id="addUserBtn" type="button" disabled>
+        Přidat uživatele
+      </button>
+    </div>
 
+    <div class="dialog-footer" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: nowrap;">
       <button class="btn btn-light" id="logoutBtn" type="button">
         Odhlásit
+      </button>
+
+      <button class="btn btn-light" id="cancelSettings" type="button">
+        Zrušit
       </button>
     </div>
   </div>
