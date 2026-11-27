@@ -23,7 +23,9 @@
     <div class="top-actions">
       <span class="save-state" id="saveState">Nepřipojeno</span>
       <button class="btn btn-primary" id="newPartBtn">＋ Nová karta</button>
-      <button class="btn btn-light" id="settingsBtn">   <span id="userIdentity"></span> </button>
+      <button class="btn btn-light" id="settingsBtn">
+        <span id="userIdentity"></span>
+      </button>
     </div>
   </header>
 
@@ -70,6 +72,24 @@
             placeholder="Hledat název, číslo, dodavatele…"
           />
         </div>
+
+        <button class="btn btn-light" id="takePhotoBtn" type="button">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M14 4h-4l-2 3H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/>
+            <circle cx="12" cy="13" r="3"/>
+          </svg>
+          Vyfotit
+        </button>
 
         <select id="stockFilter">
           <option value="all">Všechny položky</option>
