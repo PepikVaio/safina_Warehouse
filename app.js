@@ -1,3 +1,4 @@
+
 const PROFILE_KEY = "sklad-profile-v1";
 const REPO_OWNER = "PepikVaio";
 const REPO_NAME = "safina_Warehouse_Data";
@@ -13,6 +14,10 @@ let currentImageData = null;
 let lastPartTap = { id: null, at: 0 };
 let currentLastLogin = null;
 let currentAccessStatus = "";
+
+let qrScannerStream = null;
+let qrScannerFrame = null;
+let qrScannerLibrary = null;
 
 const total = p => (p.locations || []).reduce((n,l)=>n + (Number(l.qty)||0),0);
 const isUserActive = u => u?.status !== "deactive";
@@ -206,9 +211,10 @@ function bind() {
   on("addSupplier","click",()=>addSupplierRow());
   on("partImage","change",previewImage);
 
-  // Vyhledávání a filtry
+  // Vyhledávání, filtry a QR skener
   on("searchInput","input",render);
   on("stockFilter","change",render);
+  on("takePhotoBtn","click",openQrScanner);
 
   document.querySelectorAll(".nav-btn").forEach(b=>{
     b.addEventListener("click",()=>switchView(b.dataset.view));
@@ -880,7 +886,6 @@ async function openUsers(mode="list") {
         addDialog.close();
       }
 
-      // Vytvoří pracovní kopii. Změny se zatím neukládají.
       usersDraft=JSON.parse(JSON.stringify(usersData));
 
       renderUsers();
@@ -953,8 +958,6 @@ async function refreshUsers() {
 
 function closeUsersDialog() {
   $("listUsersDialog")?.close();
-
-  // Pracovní kopie se zahodí při zavření dialogu.
   usersDraft=null;
 }
 
@@ -2176,8 +2179,268 @@ function showDetail(id) {
 
 
 // =========================================================
-// QR KÓD A TISK
+// QR KÓD, SKENER A TISK
 // =========================================================
+
+function loadQrScannerLibrary() {
+  if(window.jsQR) {
+    return Promise.resolve();
+  }
+
+  if(qrScannerLibrary) {
+    return qrScannerLibrary;
+  }
+
+  qrScannerLibrary=new Promise((resolve,reject)=>{
+    const script=document.createElement("script");
+
+    script.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
+
+    script.onload=()=>{
+      if(window.jsQR) {
+        resolve();
+      } else {
+        qrScannerLibrary=null;
+        reject(new Error("Knihovna QR skeneru se nenačetla."));
+      }
+    };
+
+    script.onerror=()=>{
+      qrScannerLibrary=null;
+      reject(new Error("Nepodařilo se načíst knihovnu QR skeneru."));
+    };
+
+    document.head.appendChild(script);
+  });
+
+  return qrScannerLibrary;
+}
+
+function createQrScannerDialog() {
+  let dialog=$("qrScannerDialog");
+
+  if(dialog) return dialog;
+
+  dialog=document.createElement("dialog");
+  dialog.id="qrScannerDialog";
+
+  dialog.style.cssText=`
+    width:min(440px,calc(100% - 32px));
+    max-height:90vh;
+    padding:20px;
+    border:0;
+    border-radius:16px;
+    background:white;
+    color:#172033;
+  `;
+
+  dialog.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">
+      <h2 style="margin:0;font-size:20px;">Skenovat štítek</h2>
+
+      <button
+        type="button"
+        id="closeQrScanner"
+        class="btn btn-light"
+        aria-label="Zavřít"
+      >×</button>
+    </div>
+
+    <div style="position:relative;overflow:hidden;border-radius:12px;background:#111;">
+      <video
+        id="qrScannerVideo"
+        autoplay
+        muted
+        playsinline
+        style="display:block;width:100%;min-height:220px;object-fit:cover;"
+      ></video>
+
+      <div style="
+        position:absolute;
+        left:15%;
+        top:20%;
+        width:70%;
+        height:60%;
+        border:3px solid #22c55e;
+        border-radius:12px;
+        pointer-events:none;
+      "></div>
+    </div>
+
+    <p id="qrScannerStatus" style="margin:16px 0 0;text-align:center;">
+      Připravuji kameru…
+    </p>
+
+    <button
+      type="button"
+      id="qrScannerCancel"
+      class="btn btn-light"
+      style="width:100%;margin-top:12px;"
+    >Zavřít skener</button>
+
+    <canvas id="qrScannerCanvas" hidden></canvas>
+  `;
+
+  document.body.appendChild(dialog);
+
+  $("closeQrScanner").addEventListener("click",()=>{
+    dialog.close();
+  });
+
+  $("qrScannerCancel").addEventListener("click",()=>{
+    dialog.close();
+  });
+
+  dialog.addEventListener("close",stopQrScanner);
+
+  return dialog;
+}
+
+async function openQrScanner() {
+  if(!hasActiveAccess()) {
+    openSettings();
+    return;
+  }
+
+  if(!navigator.mediaDevices?.getUserMedia) {
+    toast("Kamera není dostupná. Aplikaci otevři přes HTTPS.");
+    return;
+  }
+
+  const dialog=createQrScannerDialog();
+
+  if(dialog.open) return;
+
+  dialog.showModal();
+
+  const status=$("qrScannerStatus");
+  const video=$("qrScannerVideo");
+
+  status.textContent="Načítám skener…";
+
+  try {
+    await loadQrScannerLibrary();
+
+    if(!dialog.open) return;
+
+    status.textContent="Čekám na povolení kamery…";
+
+    qrScannerStream=await navigator.mediaDevices.getUserMedia({
+      audio:false,
+      video:{
+        facingMode:{ideal:"environment"}
+      }
+    });
+
+    if(!dialog.open) {
+      stopQrScanner();
+      return;
+    }
+
+    video.srcObject=qrScannerStream;
+
+    await video.play();
+
+    status.textContent="Namiř kameru na QR kód štítku.";
+
+    scanQrFrame();
+
+  } catch(e) {
+    console.error("QR skener:",e);
+
+    if(!dialog.open) return;
+
+    status.textContent=
+      e.name==="NotAllowedError"
+        ? "Přístup ke kameře byl zamítnut. Povol kameru v nastavení prohlížeče."
+        : e.name==="NotFoundError"
+          ? "Nepodařilo se najít kameru."
+          : `Skener se nepodařilo spustit: ${e.message}`;
+
+    stopQrScanner();
+  }
+}
+
+function scanQrFrame() {
+  const video=$("qrScannerVideo");
+  const canvas=$("qrScannerCanvas");
+
+  if(!video||!canvas||!video.srcObject) return;
+
+  if(video.readyState===video.HAVE_ENOUGH_DATA) {
+    const context=canvas.getContext("2d",{
+      willReadFrequently:true
+    });
+
+    canvas.width=video.videoWidth;
+    canvas.height=video.videoHeight;
+
+    context.drawImage(
+      video,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    const image=context.getImageData(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    const code=window.jsQR(
+      image.data,
+      image.width,
+      image.height,
+      {
+        inversionAttempts:"attemptBoth"
+      }
+    );
+
+    if(code?.data) {
+      const id=code.data.trim();
+
+      stopQrScanner();
+
+      $("qrScannerDialog")?.close();
+
+      const part=parts.find(p=>p.id===id);
+
+      if(part) {
+        selectedPartId=part.id;
+        render();
+        showDetail(part.id);
+      } else {
+        toast(`QR kód obsahuje ID ${id}, ale karta nebyla nalezena.`);
+      }
+
+      return;
+    }
+  }
+
+  qrScannerFrame=requestAnimationFrame(scanQrFrame);
+}
+
+function stopQrScanner() {
+  if(qrScannerFrame!==null) {
+    cancelAnimationFrame(qrScannerFrame);
+    qrScannerFrame=null;
+  }
+
+  if(qrScannerStream) {
+    qrScannerStream.getTracks().forEach(track=>track.stop());
+    qrScannerStream=null;
+  }
+
+  const video=$("qrScannerVideo");
+
+  if(video) {
+    video.pause();
+    video.srcObject=null;
+  }
+}
 
 function showPrint(id) {
   const p=parts.find(x=>x.id===id);
