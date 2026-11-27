@@ -1,4 +1,3 @@
-
 const PROFILE_KEY = "sklad-profile-v1";
 const REPO_OWNER = "PepikVaio";
 const REPO_NAME = "safina_Warehouse_Data";
@@ -136,18 +135,6 @@ function bind() {
 
   $("settingsForm").onsubmit=saveSettings;
 
-  // Uložení nového GitHub tokenu v profilu.
-  $("saveProfileToken").onclick=saveProfileToken;
-
-  // Z pole tokenu není možné kopírovat ani vyjímat.
-  // Vkládání nového tokenu zůstává povolené.
-  const profileTokenField=$("profileToken");
-
-  if(profileTokenField) {
-    profileTokenField.oncopy=e=>e.preventDefault();
-    profileTokenField.oncut=e=>e.preventDefault();
-  }
-
   $("newPartBtn").onclick=()=>{
     if(requireWriter()) openPart();
   };
@@ -250,13 +237,6 @@ function updateUserSettings() {
   $("settingsLastName").textContent=currentUser?.lastName||"—";
   $("settingsRole").textContent=roleLabel(currentRole);
 
-  // Pole pro nový token zůstává prázdné.
-  // Stávající token se do něj nikdy nevypisuje.
-  const tokenField=$("profileToken");
-  if(tokenField&&!configured) {
-    tokenField.value="";
-  }
-
   // Poslední přihlášení.
   const loginField=$("settingsLastLogin");
   if(loginField) {
@@ -320,17 +300,6 @@ function fillSettings(p) {
 function openSettings() {
   fillSettings(profile());
 
-  const tokenField=$("profileToken");
-  const statusField=$("profileTokenStatus");
-
-  if(tokenField) {
-    tokenField.value="";
-  }
-
-  if(statusField) {
-    statusField.textContent="";
-  }
-
   updateUserSettings();
   $("settingsDialog").showModal();
 }
@@ -356,87 +325,6 @@ function saveSettings(e) {
     toast(e.message);
     openSettings();
   });
-}
-
-
-// =========================================================
-// ZMĚNA GITHUB TOKENU
-// =========================================================
-
-async function saveProfileToken() {
-  const tokenField=$("profileToken");
-  const button=$("saveProfileToken");
-  const statusField=$("profileTokenStatus");
-
-  if(!currentUser) {
-    toast("Nejdříve se přihlas.");
-    return;
-  }
-
-  const newToken=tokenField.value.trim();
-
-  if(!newToken) {
-    statusField.textContent="Vlož nový GitHub token.";
-    tokenField.focus();
-    return;
-  }
-
-  const oldProfile=profile();
-
-  if(newToken===oldProfile.token) {
-    statusField.textContent="Zadaný token je stejný jako současný.";
-    tokenField.value="";
-    return;
-  }
-
-  const originalButtonText=button.textContent;
-
-  button.disabled=true;
-  button.textContent="Ověřuji…";
-  statusField.textContent="Ověřuji nový token na GitHubu…";
-
-  try {
-    // Nový token se dočasně nastaví jako aktivní.
-    localStorage.setItem(
-      PROFILE_KEY,
-      JSON.stringify({...oldProfile,token:newToken})
-    );
-
-    // Načtení ověří přístup k repozitáři i registraci v users.json.
-    await loadAll();
-
-    tokenField.value="";
-    statusField.textContent="Nový token byl ověřen a uložen.";
-    toast("Nový GitHub token byl úspěšně uložen.");
-
-  } catch(error) {
-    // Při neúspěchu se obnoví původní token.
-    if(oldProfile.token) {
-      localStorage.setItem(
-        PROFILE_KEY,
-        JSON.stringify(oldProfile)
-      );
-    } else {
-      localStorage.removeItem(PROFILE_KEY);
-    }
-
-    // Obnovení původního přihlášení a dat.
-    try {
-      await loadAll();
-    } catch(restoreError) {
-      console.error("Obnovení původního přihlášení selhalo:",restoreError);
-    }
-
-    tokenField.value="";
-    statusField.textContent=
-      `Nový token se nepodařilo uložit. Původní přístup zůstal zachován. ${error.message}`;
-
-    toast(`Nový token nebyl uložen: ${error.message}`);
-
-  } finally {
-    button.disabled=false;
-    button.textContent=originalButtonText;
-  }
 }
 
 
