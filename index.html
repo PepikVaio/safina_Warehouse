@@ -1,51 +1,181 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#172033">
-  <title>Sklad náhradních dílů</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#172033"/>
+  <title>Sklad – Náhradní díly</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <div id="screenLoader" class="container" role="status" style="padding:32px 16px">Načítám sklad…</div>
+
+  <!-- Main stock screen -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div>
+        <strong>Sklad</strong>
+        <small>Náhradní díly</small>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <span class="user-identity" id="userIdentity"></span>
+      <span class="save-state" id="saveState">Nepřipojeno</span>
+      <button class="btn btn-primary" id="newPartBtn">＋ Nová karta</button>
+      <button class="btn btn-light hidden" id="userManagementBtn">Uživatelé</button>
+      <button class="btn btn-light" id="settingsBtn">Uživatel</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="page-heading">
+      <div>
+        <p class="eyebrow">SKLADOVÁ EVIDENCE</p>
+        <h1 id="pageTitle">Přehled skladu</h1>
+        <p class="muted">Společný sklad synchronizovaný přes soukromý GitHub repozitář.</p>
+      </div>
+    </section>
+
+    <section class="stats">
+      <article class="stat-card">
+        <span>Počet položek</span>
+        <strong id="statParts">0</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Celkem kusů</span>
+        <strong id="statQty">0</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Pod minimem</span>
+        <strong id="statLow">0</strong>
+      </article>
+    </section>
+
+    <nav class="main-nav">
+      <button class="nav-btn active" data-view="stock">▦ Sklad</button>
+      <button class="nav-btn" data-view="in">＋ Příjem</button>
+      <button class="nav-btn" data-view="out">− Výdej</button>
+      <button class="nav-btn" data-view="history">◷ Historie</button>
+    </nav>
+
+    <section class="view" id="stockView">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span>⌕</span>
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="Hledat název, číslo, dodavatele…"
+          />
+        </div>
+
+        <select id="stockFilter">
+          <option value="all">Všechny položky</option>
+          <option value="in">Na skladě</option>
+          <option value="empty">Vyprodáno</option>
+          <option value="low">Pod minimálním množstvím</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Název</th>
+              <th>Objednací číslo</th>
+              <th>Celkem</th>
+              <th>Minimum</th>
+              <th>Umístění</th>
+              <th>Dodavatel</th>
+              <th>Cena</th>
+              <th>Datum posledního naskladnění</th>
+            </tr>
+          </thead>
+          <tbody id="partsTable"></tbody>
+        </table>
+      </div>
+
+      <p class="table-note">
+        Jedním kliknutím položku vybereš, dalším kliknutím ji otevřeš.
+        Na počítači ji otevřeš také dvojklikem.
+      </p>
+    </section>
+  </main>
+
+  <!-- Other application screens and dialogs -->
   <div id="appScreens"></div>
-  <div class="toast" id="toast" role="status"></div>
+
+  <div class="toast" id="toast"></div>
+
   <script>
-    (async function loadScreens() {
-      const target = document.getElementById('appScreens');
-      const screens = [
-        'screens/main.html',
-        'screens/movement.html',
-        'screens/history.html',
-        'screens/new-card.html',
-        'screens/user.html',
-        'screens/users.html',
-        'screens/detail.html'
-      ];
-      for (const path of screens) {
-        const response = await fetch(path);
-        if (!response.ok) throw new Error('Nelze načíst ' + path + ' (' + response.status + ').');
-        target.insertAdjacentHTML('beforeend', await response.text());
+    const screenFiles = [
+      "goods-receipt.html",
+      "goods-issue.html",
+      "history.html",
+      "new-card.html",
+      "user.html",
+      "users.html",
+      "part-detail.html"
+    ];
+
+    async function loadScreens() {
+      const container = document.getElementById("appScreens");
+
+      try {
+        const responses = await Promise.all(
+          screenFiles.map(async file => {
+            const response = await fetch(file);
+
+            if (!response.ok) {
+              throw new Error(
+                `Nepodařilo se načíst ${file}: ${response.status}`
+              );
+            }
+
+            return response.text();
+          })
+        );
+
+        container.innerHTML = responses.join("\n");
+
+        const qrScript = document.createElement("script");
+        qrScript.src =
+          "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+
+        qrScript.onload = loadApp;
+        qrScript.onerror = () => {
+          showLoadError("Nepodařilo se načíst knihovnu QR kódů.");
+        };
+
+        document.body.appendChild(qrScript);
+
+      } catch (error) {
+        showLoadError(error.message);
       }
-      await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-        script.onload = resolve;
-        script.onerror = () => reject(new Error('Nepodařilo se načíst knihovnu QR kódů.'));
-        document.head.appendChild(script);
-      });
-      document.getElementById('screenLoader').remove();
-      const app = document.createElement('script');
-      app.src = 'app.js';
-      app.onerror = () => showLoadError('Nepodařilo se načíst app.js.');
-      document.body.appendChild(app);
-    })().catch(error => showLoadError(error.message));
+    }
+
+    function loadApp() {
+      const script = document.createElement("script");
+      script.src = "app.js";
+      script.onerror = () => {
+        showLoadError("Nepodařilo se načíst app.js.");
+      };
+
+      document.body.appendChild(script);
+    }
 
     function showLoadError(message) {
-      const loader = document.getElementById('screenLoader');
-      if (loader) loader.textContent = 'Chyba při načítání aplikace: ' + message;
+      const loader = document.getElementById("toast");
+      loader.textContent = message;
+      loader.classList.add("show");
     }
+
+    loadScreens();
   </script>
+
 </body>
 </html>
