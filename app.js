@@ -1297,17 +1297,26 @@ async function copyInviteLink() {
   }
 }
 
+
 async function shareInviteLink() {
   const url=$("inviteLink").value;
 
   if(!url) return;
 
+  if(!url.includes("#invite=")) {
+    toast("Pozvánkový odkaz není platný.");
+    return;
+  }
+
   const name=`${$("newUserFirst").value.trim()} ${$("newUserLast").value.trim()}`.trim();
 
   const shareData={
     title:"Pozvánka do skladové aplikace",
-    text:`Ahoj${name?` ${name}`:""}, zde je tvůj přístup do skladové aplikace. Otevři odkaz a klikni na Uložit přístup.`,
-    url
+    text:`Ahoj${name?` ${name}`:""}, zde je tvůj přístup do skladové aplikace.
+
+Otevři odkaz a klikni na Připojit:
+
+${url}`
   };
 
   try {
@@ -1315,12 +1324,13 @@ async function shareInviteLink() {
       await navigator.share(shareData);
       toast("Pozvánka byla předána ke sdílení.");
     } else {
-      await navigator.clipboard.writeText(url);
-      toast("Odkaz byl zkopírován. Můžeš jej vložit do zprávy.");
+      await navigator.clipboard.writeText(shareData.text);
+      toast("Pozvánka byla zkopírována.");
     }
   } catch(e) {
     if(e.name!=="AbortError") {
-      await copyInviteLink();
+      await navigator.clipboard.writeText(shareData.text);
+      toast("Pozvánka byla zkopírována.");
     }
   }
 }
