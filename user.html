@@ -1,116 +1,26 @@
 
-<!-- User profile and login dialogs. -->
-<dialog class="dialog" id="settingsDialog">
-  <form id="settingsForm">
-    <div class="dialog-header">
-      <div>
-        <p class="eyebrow">PŘIHLÁŠENÝ ÚČET</p>
-        <h2>Uživatel</h2>
-      </div>
-      <button class="icon-btn" id="closeSettings" type="button">×</button>
-    </div>
-
-    <div class="user-profile-info hidden" id="userProfileInfo">
-      <div>
-        <span>Jméno</span>
-        <strong id="settingsFirstName">—</strong>
-      </div>
-      <div>
-        <span>Příjmení</span>
-        <strong id="settingsLastName">—</strong>
-      </div>
-      <div>
-        <span>Status</span>
-        <strong id="settingsRole">—</strong>
-      </div>
-
-      <label class="field full">
-        <span>GitHub token</span>
-        <input
-          id="profileToken"
-          type="password"
-          value=""
-          readonly
-          autocomplete="off"
-        />
-      </label>
-    </div>
-
-    <div class="form-grid settings-grid" id="loginFields">
-      <label class="field full">
-        <span>GitHub token</span>
-        <input
-          autocomplete="off"
-          id="accessToken"
-          placeholder="github_pat_…"
-          required
-          type="password"
-        />
-      </label>
-
-      <div class="full">
-        <button
-          aria-expanded="false"
-          class="btn btn-light"
-          id="adminToolsToggle"
-          type="button"
-        >
-          Nástroje správce
-        </button>
-      </div>
-
-      <div class="admin-tools full hidden" id="adminTools">
-        <div class="field full">
-          <button class="btn btn-light" id="generateTokenHash" type="button">
-            Vypočítat SHA-256 otisk tokenu
-          </button>
-          <textarea
-            class="hidden"
-            id="tokenHashOutput"
-            placeholder="Otisk tokenu"
-            readonly
-            rows="2"
-          ></textarea>
-        </div>
-
-        <div class="admin-test">
-          <button class="btn btn-light" id="testConnection" type="button">
-            Ověřit připojení
-          </button>
-          <div class="full" id="connectionStatus"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="dialog-footer">
-      <button class="btn btn-light" id="logoutBtn" type="button">
-        Odhlásit
-      </button>
-      <button class="btn btn-light" id="closeSettings2" type="button">
-        Zavřít
-      </button>
-      <button class="btn btn-primary" id="saveSettingsButton" type="submit">
-        Uložit přístup
-      </button>
-    </div>
-  </form>
-</dialog>
-
-<dialog class="dialog" id="inviteDialog">
-  <div class="dialog-header">
-    <div>
-      <p class="eyebrow">POZVÁNKA DO SKLADU</p>
-      <h2>Nastavení přístupu</h2>
-    </div>
+<div class="user-profile-info hidden" id="userProfileInfo">
+  <div>
+    <span>Jméno</span>
+    <strong id="settingsFirstName">—</strong>
+  </div>
+  <div>
+    <span>Příjmení</span>
+    <strong id="settingsLastName">—</strong>
+  </div>
+  <div>
+    <span>Status</span>
+    <strong id="settingsRole">—</strong>
   </div>
 
-  <p class="muted" id="inviteDescription"></p>
-  <p>Po uložení se přístupový token uloží v tomto prohlížeči. Token se na stránce nezobrazuje.</p>
-  <p class="invite-status" id="inviteSaveStatus" role="status"></p>
-
-  <div class="dialog-footer">
-    <button class="btn btn-primary" id="saveInvite" type="button">
-      Uložit přístup
-    </button>
-  </div>
-</dialog>
+  <label class="field full">
+    <span>GitHub token</span>
+    <input
+      id="profileToken"
+      type="password"
+      value=""
+      readonly
+      autocomplete="off"
+    />
+  </label>
+</div>
