@@ -112,6 +112,8 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    const cacheVersion = Date.now();
+
     const screenFiles = [
       "goods-receipt.html",
       "goods-issue.html",
@@ -128,7 +130,10 @@
       try {
         const responses = await Promise.all(
           screenFiles.map(async file => {
-            const response = await fetch(file);
+            const response = await fetch(
+              `${file}?v=${cacheVersion}`,
+              { cache: "no-store" }
+            );
 
             if (!response.ok) {
               throw new Error(
@@ -160,7 +165,8 @@
 
     function loadApp() {
       const script = document.createElement("script");
-      script.src = "app.js";
+
+      script.src = `app.js?v=${cacheVersion}`;
       script.onerror = () => {
         showLoadError("Nepodařilo se načíst app.js.");
       };
