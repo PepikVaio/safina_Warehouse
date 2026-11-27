@@ -26,16 +26,19 @@
         <strong id="settingsRole">—</strong>
       </div>
 
-      <label class="field full">
-        <span>GitHub token</span>
-        <input
-          id="profileToken"
-          type="password"
-          value=""
-          readonly
-          autocomplete="off"
-        />
-      </label>
+      <div style="grid-column: 1 / -1; width: 100%;">
+        <label class="field" style="display: block; width: 100%;">
+          <span>GitHub token</span>
+          <input
+            id="profileToken"
+            type="password"
+            value=""
+            readonly
+            autocomplete="off"
+            style="width: 100%;"
+          />
+        </label>
+      </div>
     </div>
 
     <div class="form-grid settings-grid" id="loginFields">
@@ -66,7 +69,6 @@
           <button class="btn btn-light" id="generateTokenHash" type="button">
             Vypočítat SHA-256 otisk tokenu
           </button>
-
           <textarea
             class="hidden"
             id="tokenHashOutput"
@@ -110,12 +112,7 @@
   </div>
 
   <p class="muted" id="inviteDescription"></p>
-
-  <p>
-    Po uložení se přístupový token uloží v tomto prohlížeči.
-    Token se na stránce nezobrazuje.
-  </p>
-
+  <p>Po uložení se přístupový token uloží v tomto prohlížeči. Token se na stránce nezobrazuje.</p>
   <p class="invite-status" id="inviteSaveStatus" role="status"></p>
 
   <div class="dialog-footer">
