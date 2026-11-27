@@ -1,71 +1,106 @@
 
 <!-- User profile and login dialogs. -->
+
 <dialog class="dialog" id="settingsDialog">
   <form id="settingsForm">
-    <div class="dialog-header">
-      <div>
-        <p class="eyebrow">PŘIHLÁŠENÝ ÚČET</p>
-        <h2>Uživatel</h2>
-      </div>
-      <button class="icon-btn" id="closeSettings" type="button">×</button>
-    </div>
 
     <div class="user-profile-info hidden" id="userProfileInfo">
 
-      <div>
-        <span>Jméno</span>
-        <strong id="settingsFirstName">—</strong>
+      <!-- Account header -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:38px;">
+        <h2 style="margin:0;">Přihlášený účet</h2>
+        <span style="display:inline-block; padding:8px 18px; border-radius:30px; background:rgba(34,197,94,.14); color:#22c55e; font-weight:600; white-space:nowrap;">
+          Přihlášen
+        </span>
       </div>
 
-      <div>
-        <span>Příjmení</span>
-        <strong id="settingsLastName">—</strong>
-      </div>
+      <!-- User identity -->
+      <div style="margin-bottom:38px;">
+        <div style="display:flex; align-items:baseline; flex-wrap:wrap; gap:8px; font-size:2rem; font-weight:650; line-height:1.2;">
+          <strong id="settingsFirstName">—</strong>
+          <strong id="settingsLastName">—</strong>
+        </div>
 
-      <div>
-        <span>Status / oprávnění</span>
-        <strong id="settingsRole">—</strong>
-      </div>
-
-      <div style="grid-column: 1 / -1; width: 100%;">
-        <label class="field" style="display: block; width: 100%;">
-          <span>GitHub token</span>
-          <input
-            id="profileToken"
-            type="password"
-            value=""
-            readonly
-            autocomplete="off"
-            style="width: 100%;"
-          />
-        </label>
-      </div>
-
-      <div style="grid-column: 1 / -1; width: 100%; margin-top: 12px;">
-        <div class="section-label">Aktivita uživatele</div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;">
-
-          <div>
-            <span>Poslední přihlášení</span>
-            <strong id="settingsLastLogin">—</strong>
-          </div>
-
-          <div>
-            <span>Provedené operace</span>
-            <strong id="settingsOperationCount">—</strong>
-          </div>
-
-          <div>
-            <span>Verze aplikace</span>
-            <strong id="appVersion">—</strong>
-          </div>
-
+        <div id="settingsRole" style="font-size:1.4rem; color:var(--muted); margin-top:12px;">
+          —
         </div>
       </div>
+
+      <div style="height:1px; background:var(--border); margin-bottom:38px;"></div>
+
+      <!-- Account information -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0;">
+
+        <div style="padding:0 0 16px; font-weight:650; border-bottom:1px solid var(--border);">
+          Informace
+        </div>
+
+        <div style="padding:0 0 16px; font-weight:650; border-bottom:1px solid var(--border);">
+          Hodnota
+        </div>
+
+        <div style="padding:16px 0; border-bottom:1px solid var(--border);">
+          Status
+        </div>
+
+        <div style="padding:16px 0; border-bottom:1px solid var(--border);">
+          <span id="settingsRoleValue">—</span>
+        </div>
+
+        <div style="padding:16px 0; border-bottom:1px solid var(--border);">
+          Poslední přihlášení
+        </div>
+
+        <div style="padding:16px 0; border-bottom:1px solid var(--border);">
+          <span id="settingsLastLogin">—</span>
+        </div>
+
+        <div style="padding:16px 0; border-bottom:1px solid var(--border);">
+          Provedené operace
+        </div>
+
+        <div style="padding:16px 0; border-bottom:1px solid var(--border);">
+          <span id="settingsOperationCount">—</span>
+        </div>
+
+        <div style="padding:16px 0;">
+          Verze aplikace
+        </div>
+
+        <div style="padding:16px 0;">
+          <span id="appVersion">1.0</span>
+        </div>
+
+      </div>
+
+      <div style="height:1px; background:var(--border); margin:28px 0 30px;"></div>
+
+      <!-- GitHub token -->
+      <div>
+        <h3 style="margin:0 0 18px;">GitHub token</h3>
+
+        <input
+          id="profileToken"
+          type="password"
+          value=""
+          readonly
+          autocomplete="off"
+          style="width:100%; border:0; background:transparent; padding:8px 0; font-size:1.1rem; box-shadow:none;"
+        />
+      </div>
+
     </div>
 
+    <!-- Login form -->
     <div class="form-grid settings-grid" id="loginFields">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">PŘIHLÁŠENÍ</p>
+          <h2>Uživatel</h2>
+        </div>
+        <button class="icon-btn" id="closeSettings" type="button">×</button>
+      </div>
+
       <label class="field full">
         <span>GitHub token</span>
         <input
@@ -78,8 +113,10 @@
       </label>
     </div>
 
-    <div class="dialog-footer">
-      <button class="btn btn-light" id="logoutBtn" type="button">
+    <!-- Footer -->
+    <div class="dialog-footer" style="display:flex; justify-content:flex-end; align-items:center; gap:12px; margin-top:28px;">
+
+      <button class="btn btn-light hidden" id="logoutBtn" type="button">
         Odhlásit
       </button>
 
@@ -90,9 +127,12 @@
       <button class="btn btn-primary" id="saveSettingsButton" type="submit">
         Uložit přístup
       </button>
+
     </div>
+
   </form>
 </dialog>
+
 
 <dialog class="dialog" id="inviteDialog">
   <div class="dialog-header">
