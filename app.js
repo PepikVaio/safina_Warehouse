@@ -141,7 +141,11 @@ async function init() {
 
 function bind() {
   $("settingsBtn").onclick=openSettings;
-  $("userManagementBtn").onclick=openUsers;
+  $("userManagementBtn").onclick=()=>openUsers("list");
+
+  $("listUsersBtn").onclick=()=>openUsers("list");
+  $("addUserBtn").onclick=()=>openUsers("add");
+
   $("closeUsers").onclick=()=>$("usersDialog").close();
   $("userForm").onsubmit=saveUser;
   $("copyInvite").onclick=shareInviteLink;
@@ -150,6 +154,7 @@ function bind() {
   $("saveInvite").onclick=saveInvite;
 
   $("closeSettings").onclick=()=>$("settingsDialog").close();
+  $("cancelSettings").onclick=()=>$("settingsDialog").close();
 
   $("settingsForm").onsubmit=saveSettings;
 
@@ -759,7 +764,7 @@ function logout() {
 // SPRÁVA UŽIVATELŮ
 // =========================================================
 
-async function openUsers() {
+async function openUsers(mode="list") {
   if(!isAdmin()) {
     toast("Správa uživatelů je dostupná pouze správci.");
     return;
@@ -773,6 +778,14 @@ async function openUsers() {
     $("userForm").reset();
 
     $("usersDialog").showModal();
+
+    if(mode==="add") {
+      $("newUserFirst").focus();
+      $("newUserFirst").scrollIntoView({
+        behavior:"smooth",
+        block:"center"
+      });
+    }
 
   } catch(e) {
     toast(`Uživatele se nepodařilo načíst: ${e.message}`);
@@ -1248,8 +1261,12 @@ async function uploadImage(file,id) {
 
 function applyPermissions() {
   const writer=!!currentUser&&isWriter();
+  const admin=isAdmin();
 
-  $("userManagementBtn").classList.toggle("hidden",!isAdmin());
+  $("userManagementBtn").classList.toggle("hidden",!admin);
+
+  $("listUsersBtn").disabled=!admin;
+  $("addUserBtn").disabled=!admin;
 
   updateUserSettings();
 
