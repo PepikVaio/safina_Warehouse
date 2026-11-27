@@ -1,4 +1,3 @@
-
 const PROFILE_KEY = "sklad-profile-v1";
 const REPO_OWNER = "PepikVaio";
 const REPO_NAME = "safina_Warehouse_Data";
@@ -150,7 +149,7 @@ function bind() {
   $("logoutBtn").onclick=logout;
   $("saveInvite").onclick=saveInvite;
 
-  $("closeSettings").onclick=$("closeSettings2").onclick=()=>$("settingsDialog").close();
+  $("closeSettings").onclick=()=>$("settingsDialog").close();
 
   $("settingsForm").onsubmit=saveSettings;
 
