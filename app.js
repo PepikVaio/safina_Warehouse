@@ -42,8 +42,19 @@ const profile = () => {
 };
 
 const isConfigured = p => !!p.token;
-const isWriter = () => currentRole === "write" || currentRole === "admin";
-const isAdmin = () => currentRole === "admin";
+
+const hasActiveAccess = () =>
+  !!currentUser &&
+  currentAccessStatus !== "deactive" &&
+  currentAccessStatus !== "removed";
+
+const isWriter = () =>
+  hasActiveAccess() &&
+  (currentRole === "write" || currentRole === "admin");
+
+const isAdmin = () =>
+  hasActiveAccess() &&
+  currentRole === "admin";
 
 const roleLabel = role => ({
   read:"Read – pouze prohlížení",
@@ -267,7 +278,11 @@ function updateUserSettings() {
       : "";
 
     const count=historyItems.filter(h=>h.user===userName).length;
-    operationField.textContent=configured ? String(count) : "—";
+
+    operationField.textContent=
+      !configured || currentAccessStatus==="deactive"
+        ? "—"
+        : String(count);
   }
 
   const versionField=$("appVersion");
@@ -293,6 +308,12 @@ function requireWriter() {
     return false;
   }
 
+  if(!hasActiveAccess()) {
+    openSettings();
+    toast("Tvůj účet je deaktivován.");
+    return false;
+  }
+
   if(!isWriter()) {
     toast("Tento přístupový klíč umožňuje pouze prohlížení.");
     return false;
@@ -314,7 +335,10 @@ function openSettings() {
   fillSettings(profile());
 
   updateUserSettings();
-  $("settingsDialog").showModal();
+
+  if(!$("settingsDialog").open) {
+    $("settingsDialog").showModal();
+  }
 }
 
 async function saveSettings(e) {
@@ -472,12 +496,6 @@ async function loadRole() {
     return false;
   }
 
-  if(!isUserActive(match)) {
-    currentAccessStatus="deactive";
-    updateIdentity();
-    return false;
-  }
-
   if(!match.firstName||!match.lastName) {
     throw new Error("Uživatel v users.json nemá vyplněné jméno a příjmení.");
   }
@@ -494,6 +512,14 @@ async function loadRole() {
   currentRole=match.role;
 
   const loginKey=`sklad-last-login-${tokenHash}`;
+
+  if(!isUserActive(match)) {
+    currentAccessStatus="deactive";
+    currentLastLogin=localStorage.getItem(loginKey);
+    updateIdentity();
+    return false;
+  }
+
   currentLastLogin=new Date().toISOString();
   localStorage.setItem(loginKey,currentLastLogin);
 
@@ -991,7 +1017,7 @@ async function saveUser(e) {
     }
 
     const inviteExpiresAt=new Date(
-      Date.now()+24*60*60*1000
+      Date.now()+5*60*1000
     ).toISOString();
 
     const user={
@@ -1029,7 +1055,7 @@ async function saveUser(e) {
     $("newUserToken").value="";
 
     $("userSaveStatus").textContent=
-      `Uživatel ${firstName} ${lastName} byl uložen do soukromého GitHub repozitáře. Pozvánka je platná 24 hodin.`;
+      `Uživatel ${firstName} ${lastName} byl uložen do soukromého GitHub repozitáře. Pozvánka je platná 5 minut.`;
 
     renderUsers();
 
@@ -1278,12 +1304,12 @@ function applyPermissions() {
 // =========================================================
 
 function switchView(view) {
-  if((view==="in"||view==="out")&&!requireWriter()) {
+  if(!hasActiveAccess()) {
+    openSettings();
     return;
   }
 
-  if(!currentUser) {
-    openSettings();
+  if((view==="in"||view==="out")&&!requireWriter()) {
     return;
   }
 
@@ -1844,7 +1870,7 @@ function openMovementFromDetail(mode) {
 // =========================================================
 
 function showDetail(id) {
-  if(!currentUser) return;
+  if(!hasActiveAccess()) return;
 
   const p=parts.find(x=>x.id===id);
 
