@@ -1,8 +1,6 @@
-<!-- HTML fragment loaded by index.html; keep app element IDs unchanged. -->
-
+<!-- Nastavení účtu a přihlášení -->
 <dialog class="dialog" id="settingsDialog">
   <form id="settingsForm">
-
     <div class="dialog-header">
       <div>
         <p class="eyebrow">PŘIHLÁŠENÝ ÚČET</p>
@@ -13,32 +11,21 @@
       </div>
       <button class="icon-btn" id="closeSettings" type="button">×</button>
     </div>
-
-    <p class="muted" id="settingsAccountType">Uživatel skladu</p>
-
+    <p class="muted" id="settingsAccountType"></p>
     <div class="user-profile-info hidden" id="userProfileInfo">
-
       <div class="profile-info-grid">
-
         <div class="profile-info-heading">Informace</div>
         <div class="profile-info-heading">Hodnota</div>
-
         <div>Status</div>
         <strong id="settingsRole">—</strong>
-
         <div>Poslední přihlášení</div>
         <strong id="settingsLastLogin">—</strong>
-
         <div>Provedené operace</div>
         <strong id="settingsOperationCount">—</strong>
-
         <div>Verze aplikace</div>
         <strong id="appVersion">—</strong>
-
       </div>
-
     </div>
-
     <div class="form-grid settings-grid" id="loginFields">
       <label class="field full">
         <span>GitHub token</span>
@@ -51,50 +38,16 @@
         />
       </label>
     </div>
-
     <div class="dialog-footer">
-
       <button class="btn btn-light" id="logoutBtn" type="button">
         Odhlásit
       </button>
-
       <button class="btn btn-light" id="closeSettings2" type="button">
         Zavřít
       </button>
-
       <button class="btn btn-primary" id="saveSettingsButton" type="submit">
         Uložit přístup
       </button>
-
     </div>
-
   </form>
-</dialog>
-
-
-<!-- Pozvánka do skladu -->
-<dialog class="dialog" id="inviteDialog">
-
-  <div class="dialog-header">
-    <div>
-      <p class="eyebrow">POZVÁNKA DO SKLADU</p>
-      <h2>Nastavení přístupu</h2>
-    </div>
-  </div>
-
-  <p class="muted" id="inviteDescription"></p>
-
-  <p>
-    Po uložení se přístupový token uloží v tomto prohlížeči.
-    Token se na stránce nezobrazuje.
-  </p>
-
-  <p class="invite-status" id="inviteSaveStatus" role="status"></p>
-
-  <div class="dialog-footer">
-    <button class="btn btn-primary" id="saveInvite" type="button">
-      Uložit přístup
-    </button>
-  </div>
-
 </dialog>
