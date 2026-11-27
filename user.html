@@ -11,6 +11,7 @@
     </div>
 
     <div class="user-profile-info hidden" id="userProfileInfo">
+
       <div>
         <span>Jméno</span>
         <strong id="settingsFirstName">—</strong>
@@ -22,7 +23,7 @@
       </div>
 
       <div>
-        <span>Status</span>
+        <span>Status / oprávnění</span>
         <strong id="settingsRole">—</strong>
       </div>
 
@@ -40,37 +41,26 @@
         </label>
       </div>
 
-      <div class="full">
-        <button
-          aria-expanded="false"
-          class="btn btn-light"
-          id="adminToolsToggle"
-          type="button"
-        >
-          Nástroje správce
-        </button>
-      </div>
+      <div style="grid-column: 1 / -1; width: 100%; margin-top: 12px;">
+        <div class="section-label">Aktivita uživatele</div>
 
-      <div class="admin-tools full hidden" id="adminTools">
-        <div class="field full">
-          <button class="btn btn-light" id="generateTokenHash" type="button">
-            Vypočítat SHA-256 otisk tokenu
-          </button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;">
 
-          <textarea
-            class="hidden"
-            id="tokenHashOutput"
-            placeholder="Otisk tokenu"
-            readonly
-            rows="2"
-          ></textarea>
-        </div>
+          <div>
+            <span>Poslední přihlášení</span>
+            <strong id="settingsLastLogin">—</strong>
+          </div>
 
-        <div class="admin-test">
-          <button class="btn btn-light" id="testConnection" type="button">
-            Ověřit připojení
-          </button>
-          <div class="full" id="connectionStatus"></div>
+          <div>
+            <span>Provedené operace</span>
+            <strong id="settingsOperationCount">—</strong>
+          </div>
+
+          <div>
+            <span>Verze aplikace</span>
+            <strong id="appVersion">—</strong>
+          </div>
+
         </div>
       </div>
     </div>
@@ -113,7 +103,12 @@
   </div>
 
   <p class="muted" id="inviteDescription"></p>
-  <p>Po uložení se přístupový token uloží v tomto prohlížeči. Token se na stránce nezobrazuje.</p>
+
+  <p>
+    Po uložení se přístupový token uloží v tomto prohlížeči.
+    Token se na stránce nezobrazuje.
+  </p>
+
   <p class="invite-status" id="inviteSaveStatus" role="status"></p>
 
   <div class="dialog-footer">
