@@ -985,8 +985,8 @@ function renderUsers() {
             ${active?"Deaktivovat":"Aktivovat"}
           </button>
 
-          <button type="button" class="btn btn-light user-remove">
-            Odebrat
+                    <button type="button" class="btn btn-light user-remove" title="Odebrat uživatele" aria-label="Odebrat uživatele">
+            ×
           </button>
         </div>
       </div>
