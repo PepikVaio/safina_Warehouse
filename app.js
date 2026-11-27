@@ -1,3 +1,4 @@
+
 const PROFILE_KEY = "sklad-profile-v1";
 const REPO_OWNER = "PepikVaio";
 const REPO_NAME = "safina_Warehouse_Data";
@@ -11,8 +12,10 @@ let usersData = { users: [] }, usersFileSha = null, pendingInvite = null;
 let currentImageData = null;
 let lastPartTap = { id: null, at: 0 };
 let currentLastLogin = null;
+let currentAccessStatus = "";
 
 const total = p => (p.locations || []).reduce((n,l)=>n + (Number(l.qty)||0),0);
+const isUserActive = u => u?.status !== "deactive";
 
 const today = () => {
   const d=new Date();
@@ -95,10 +98,15 @@ async function init() {
     setState("Čeká se na potvrzení pozvánky");
   } else if(isConfigured(p)) {
     try {
-      await loadAll();
+      const allowed=await loadAll();
+
+      if(!allowed) {
+        openSettings();
+      }
     } catch(e) {
       setState("Chyba připojení");
       toast(e.message);
+      openSettings();
     }
   } else {
     setState("Nastav připojení");
@@ -152,7 +160,6 @@ function bind() {
     b.onclick=()=>switchView(b.dataset.view);
   });
 
-  // Samostatné události pro příjem a výdej.
   ["in","out"].forEach(mode=>{
     movementElement("form",mode).onsubmit=e=>saveMovement(e,mode);
 
@@ -217,7 +224,6 @@ function updateUserSettings() {
   $("loginFields").classList.toggle("hidden",configured);
   $("saveSettingsButton").classList.toggle("hidden",configured);
 
-  // Dynamické jméno v horním pásu – příjmení a potom jméno.
   const nameField=$("settingsUserName");
   if(nameField) {
     nameField.textContent=configured
@@ -225,7 +231,6 @@ function updateUserSettings() {
       : "Přihlásit";
   }
 
-  // Označení typu účtu pod horním pásem.
   const accountType=$("settingsAccountType");
   if(accountType) {
     accountType.textContent=configured
@@ -241,9 +246,13 @@ function updateUserSettings() {
     ? currentUser.lastName
     : "";
 
-  $("settingsRole").textContent=roleLabel(currentRole);
+  $("settingsRole").textContent=
+    currentAccessStatus==="deactive"
+      ? "Deaktivováno"
+      : currentAccessStatus==="removed"
+        ? "Přístup odebrán"
+        : roleLabel(currentRole);
 
-  // Poslední přihlášení.
   const loginField=$("settingsLastLogin");
   if(loginField) {
     loginField.textContent=currentLastLogin
@@ -251,7 +260,6 @@ function updateUserSettings() {
       : "—";
   }
 
-  // Počet operací aktuálního uživatele.
   const operationField=$("settingsOperationCount");
   if(operationField) {
     const userName=currentUser
@@ -262,7 +270,6 @@ function updateUserSettings() {
     operationField.textContent=configured ? String(count) : "—";
   }
 
-  // Verze aplikace není zatím v projektu definována.
   const versionField=$("appVersion");
   if(versionField) {
     versionField.textContent="—";
@@ -280,9 +287,9 @@ function toast(s) {
 }
 
 function requireWriter() {
-  if(!isConfigured(profile())) {
+  if(!currentUser) {
     openSettings();
-    toast("Nejdříve nastav připojení ke skladu.");
+    toast("Nejdříve se přihlas ke skladu.");
     return false;
   }
 
@@ -310,7 +317,7 @@ function openSettings() {
   $("settingsDialog").showModal();
 }
 
-function saveSettings(e) {
+async function saveSettings(e) {
   e.preventDefault();
 
   const token=$("accessToken").value.trim();
@@ -322,15 +329,23 @@ function saveSettings(e) {
 
   localStorage.setItem(PROFILE_KEY,JSON.stringify({token}));
 
-  loadAll().then(()=>{
+  try {
+    const allowed=await loadAll();
+
+    if(!allowed) {
+      openSettings();
+      return;
+    }
+
     $("settingsDialog").close();
     updateUserSettings();
     toast("Přístup byl uložen.");
-  }).catch(e=>{
+
+  } catch(err) {
     setState("Chyba připojení");
-    toast(e.message);
+    toast(err.message);
     openSettings();
-  });
+  }
 }
 
 
@@ -407,13 +422,14 @@ async function sha256Token(token) {
 
 
 // =========================================================
-// OVĚŘENÍ ROLE
+// OVĚŘENÍ ROLE A STAVU ÚČTU
 // =========================================================
 
 async function loadRole() {
   currentRole="read";
   currentUser=null;
   currentLastLogin=null;
+  currentAccessStatus="";
 
   const p=profile();
 
@@ -447,8 +463,19 @@ async function loadRole() {
     u=>typeof u.tokenHash==="string"&&u.tokenHash.toLowerCase()===tokenHash
   );
 
+  usersData=data;
+  usersFileSha=usersFile.sha;
+
   if(!match) {
-    throw new Error("Tento GitHub token není zaregistrován v users.json. Kontaktuj správce skladu.");
+    currentAccessStatus="removed";
+    updateIdentity();
+    return false;
+  }
+
+  if(!isUserActive(match)) {
+    currentAccessStatus="deactive";
+    updateIdentity();
+    return false;
   }
 
   if(!match.firstName||!match.lastName) {
@@ -459,9 +486,6 @@ async function loadRole() {
     throw new Error("Uživatel v users.json má neplatnou roli.");
   }
 
-  usersData=data;
-  usersFileSha=usersFile.sha;
-
   currentUser={
     firstName:match.firstName,
     lastName:match.lastName
@@ -469,12 +493,12 @@ async function loadRole() {
 
   currentRole=match.role;
 
-  // Uloží čas úspěšného ověření přihlášení pro tento účet na tomto zařízení.
   const loginKey=`sklad-last-login-${tokenHash}`;
   currentLastLogin=new Date().toISOString();
   localStorage.setItem(loginKey,currentLastLogin);
 
   updateIdentity();
+  return true;
 }
 
 
@@ -483,14 +507,34 @@ async function loadRole() {
 // =========================================================
 
 async function loadAll() {
+  setState("Ověřuji přístup…");
+
+  const allowed=await loadRole();
+
+  if(!allowed) {
+    parts=[];
+    historyItems=[];
+    fileState={data:null,history:null};
+
+    setState(
+      currentAccessStatus==="deactive"
+        ? "Deaktivováno"
+        : "Přístup odebrán"
+    );
+
+    applyPermissions();
+    render();
+    updateUserSettings();
+
+    return false;
+  }
+
   setState("Načítám GitHub…");
 
   const [d,h]=await Promise.all([
     readJson("data.json",{parts:[]}),
     readJson("history.json",{items:[]})
   ]);
-
-  await loadRole();
 
   parts=(d.value.parts||[]).map(p=>({
     ...p,
@@ -512,6 +556,8 @@ async function loadAll() {
   applyPermissions();
   render();
   updateUserSettings();
+
+  return true;
 }
 
 
@@ -567,6 +613,51 @@ function readInviteFromUrl() {
   history.replaceState(null,"",location.pathname+location.search);
 }
 
+async function verifyPendingInvite() {
+  if(!pendingInvite?.inviteExpiresAt) {
+    throw new Error("Pozvánka nemá nastavenou platnost. Požádej správce o novou.");
+  }
+
+  const expires=Date.parse(pendingInvite.inviteExpiresAt);
+
+  if(!Number.isFinite(expires)||Date.now()>expires) {
+    throw new Error("Platnost pozvánky vypršela. Požádej správce o novou.");
+  }
+
+  const file=await apiGet("users.json");
+
+  if(!file?.content) {
+    throw new Error("Nelze ověřit pozvánku v users.json.");
+  }
+
+  const data=JSON.parse(decodeContent(file.content));
+  const hash=await sha256Token(pendingInvite.token);
+
+  const match=(Array.isArray(data.users)?data.users:[]).find(
+    u=>typeof u.tokenHash==="string"&&u.tokenHash.toLowerCase()===hash
+  );
+
+  if(!match) {
+    throw new Error("Pozvánka již není platná nebo byl uživatel odebrán.");
+  }
+
+  if(!isUserActive(match)) {
+    throw new Error("Tento účet je deaktivován.");
+  }
+
+  if(match.inviteExpiresAt!==pendingInvite.inviteExpiresAt) {
+    throw new Error("Pozvánka neodpovídá záznamu v users.json.");
+  }
+
+  if(
+    match.firstName!==pendingInvite.firstName||
+    match.lastName!==pendingInvite.lastName||
+    match.role!==pendingInvite.role
+  ) {
+    throw new Error("Údaje pozvánky neodpovídají záznamu uživatele.");
+  }
+}
+
 async function saveInvite() {
   if(!pendingInvite) return;
 
@@ -576,7 +667,7 @@ async function saveInvite() {
   button.disabled=true;
   button.textContent="Ukládám…";
 
-  $("inviteSaveStatus").textContent="Ověřuji přístup k soukromému skladu…";
+  $("inviteSaveStatus").textContent="Ověřuji platnost pozvánky…";
 
   try {
     localStorage.setItem(
@@ -584,7 +675,19 @@ async function saveInvite() {
       JSON.stringify({token:pendingInvite.token})
     );
 
-    await loadAll();
+    await verifyPendingInvite();
+
+    $("inviteSaveStatus").textContent="Ověřuji přístup ke skladu…";
+
+    const allowed=await loadAll();
+
+    if(!allowed) {
+      throw new Error(
+        currentAccessStatus==="deactive"
+          ? "Účet je deaktivován."
+          : "Přístup k účtu byl odebrán."
+      );
+    }
 
     const name=`${pendingInvite.firstName} ${pendingInvite.lastName}`;
 
@@ -620,8 +723,6 @@ function logout() {
   }
 
   localStorage.removeItem(PROFILE_KEY);
-
-  // Obnovení stránky odstraní načtená data skladu z paměti aplikace.
   window.location.reload();
 }
 
@@ -646,7 +747,7 @@ async function openUsers() {
     $("usersDialog").showModal();
 
   } catch(e) {
-    toast(`Uživatelé se nepodařilo načíst: ${e.message}`);
+    toast(`Uživatele se nepodařilo načíst: ${e.message}`);
   }
 }
 
@@ -682,24 +783,34 @@ function renderUsers() {
       return aw-bw||a.u.lastName.localeCompare(b.u.lastName,"cs");
     });
 
-  list.innerHTML=sorted.map(({u,index})=>`
-    <div class="user-row" data-index="${index}">
-      <div class="user-row-info">
-        <strong>${esc(u.firstName)} ${esc(u.lastName)}</strong>
-        <small>${roleLabel(u.role)}</small>
+  list.innerHTML=sorted.map(({u,index})=>{
+    const active=isUserActive(u);
+
+    return `
+      <div class="user-row" data-index="${index}">
+        <div class="user-row-info">
+          <strong>${esc(u.firstName)} ${esc(u.lastName)}</strong>
+          <small>${roleLabel(u.role)} · ${active?"Aktivní":"Deaktivováno"}</small>
+        </div>
+
+        <select class="user-role" aria-label="Role uživatele">
+          <option value="read" ${u.role==="read"?"selected":""}>Read</option>
+          <option value="write" ${u.role==="write"?"selected":""}>Write</option>
+          <option value="admin" ${u.role==="admin"?"selected":""}>Admin</option>
+        </select>
+
+        <div class="user-actions">
+          <button type="button" class="btn btn-light user-toggle">
+            ${active?"Deaktivovat":"Aktivovat"}
+          </button>
+
+          <button type="button" class="btn btn-light user-remove">
+            Odebrat
+          </button>
+        </div>
       </div>
-
-      <select class="user-role" aria-label="Role uživatele">
-        <option value="read" ${u.role==="read"?"selected":""}>Read</option>
-        <option value="write" ${u.role==="write"?"selected":""}>Write</option>
-        <option value="admin" ${u.role==="admin"?"selected":""}>Admin</option>
-      </select>
-
-      <button type="button" class="btn btn-light user-remove">
-        Odebrat
-      </button>
-    </div>
-  `).join("")||'<p class="muted">Zatím nejsou přidáni žádní uživatelé.</p>';
+    `;
+  }).join("")||'<p class="muted">Zatím nejsou přidáni žádní uživatelé.</p>';
 
   list.querySelectorAll(".user-role").forEach(el=>{
     el.onchange=async()=>{
@@ -720,10 +831,11 @@ function renderUsers() {
       if(
         old==="admin"&&
         el.value!=="admin"&&
-        usersData.users.filter(x=>x.role==="admin").length===1
+        isUserActive(user)&&
+        usersData.users.filter(x=>x.role==="admin"&&isUserActive(x)).length===1
       ) {
         el.value=old;
-        toast("Nelze odebrat roli poslednímu správci.");
+        toast("Nelze odebrat roli poslednímu aktivnímu správci.");
         return;
       }
 
@@ -735,7 +847,58 @@ function renderUsers() {
         toast("Role uživatele byla změněna.");
       } catch(e) {
         user.role=old;
-        el.value=old;
+        renderUsers();
+        toast(e.message);
+      }
+    };
+  });
+
+  list.querySelectorAll(".user-toggle").forEach(el=>{
+    el.onclick=async()=>{
+      const i=Number(el.closest(".user-row").dataset.index);
+      const user=usersData.users[i];
+
+      if(!isAdmin()) return;
+
+      const ownHash=await sha256Token(profile().token);
+
+      if(user.tokenHash===ownHash) {
+        toast("Vlastní účet správce nelze deaktivovat.");
+        return;
+      }
+
+      const active=isUserActive(user);
+
+      if(
+        active&&
+        user.role==="admin"&&
+        usersData.users.filter(x=>x.role==="admin"&&isUserActive(x)).length===1
+      ) {
+        toast("Nelze deaktivovat posledního aktivního správce.");
+        return;
+      }
+
+      const oldStatus=user.status;
+      user.status=active?"deactive":"active";
+
+      try {
+        await saveUsers();
+        renderUsers();
+
+        toast(
+          active
+            ? "Uživatel byl deaktivován."
+            : "Uživatel byl aktivován."
+        );
+
+      } catch(e) {
+        if(oldStatus===undefined) {
+          delete user.status;
+        } else {
+          user.status=oldStatus;
+        }
+
+        renderUsers();
         toast(e.message);
       }
     };
@@ -757,9 +920,10 @@ function renderUsers() {
 
       if(
         u.role==="admin"&&
-        usersData.users.filter(x=>x.role==="admin").length===1
+        isUserActive(u)&&
+        usersData.users.filter(x=>x.role==="admin"&&isUserActive(x)).length===1
       ) {
-        toast("Nelze odebrat posledního správce.");
+        toast("Nelze odebrat posledního aktivního správce.");
         return;
       }
 
@@ -771,6 +935,7 @@ function renderUsers() {
         await saveUsers();
         renderUsers();
         toast("Uživatel byl odebrán.");
+
       } catch(e) {
         usersData.users=previous;
         renderUsers();
@@ -825,7 +990,18 @@ async function saveUser(e) {
       throw new Error("Tento token už je přiřazen jinému uživateli.");
     }
 
-    const user={tokenHash,firstName,lastName,role};
+    const inviteExpiresAt=new Date(
+      Date.now()+24*60*60*1000
+    ).toISOString();
+
+    const user={
+      tokenHash,
+      firstName,
+      lastName,
+      role,
+      status:"active",
+      inviteExpiresAt
+    };
 
     usersData.users.push(user);
 
@@ -837,7 +1013,13 @@ async function saveUser(e) {
     }
 
     const invite=base64UrlEncode(
-      JSON.stringify({token,firstName,lastName,role})
+      JSON.stringify({
+        token,
+        firstName,
+        lastName,
+        role,
+        inviteExpiresAt
+      })
     );
 
     const url=`${location.origin}${location.pathname}${location.search}#invite=${invite}`;
@@ -847,7 +1029,7 @@ async function saveUser(e) {
     $("newUserToken").value="";
 
     $("userSaveStatus").textContent=
-      `Uživatel ${firstName} ${lastName} byl uložen do soukromého GitHub repozitáře. Nyní můžeš pozvánku sdílet.`;
+      `Uživatel ${firstName} ${lastName} byl uložen do soukromého GitHub repozitáře. Pozvánka je platná 24 hodin.`;
 
     renderUsers();
 
@@ -1037,7 +1219,7 @@ async function uploadImage(file,id) {
 // =========================================================
 
 function applyPermissions() {
-  const writer=isWriter();
+  const writer=!!currentUser&&isWriter();
 
   $("userManagementBtn").classList.toggle("hidden",!isAdmin());
 
@@ -1097,6 +1279,11 @@ function applyPermissions() {
 
 function switchView(view) {
   if((view==="in"||view==="out")&&!requireWriter()) {
+    return;
+  }
+
+  if(!currentUser) {
+    openSettings();
     return;
   }
 
@@ -1657,6 +1844,8 @@ function openMovementFromDetail(mode) {
 // =========================================================
 
 function showDetail(id) {
+  if(!currentUser) return;
+
   const p=parts.find(x=>x.id===id);
 
   if(!p) return;
