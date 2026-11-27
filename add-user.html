@@ -1,0 +1,128 @@
+<!-- =====================================================
+     PŘIDÁNÍ UŽIVATELE
+====================================================== -->
+
+<dialog class="dialog" id="addUserDialog">
+  <div>
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">SPRÁVA PŘÍSTUPŮ</p>
+        <h2>Přidat uživatele</h2>
+      </div>
+
+      <button class="icon-btn" id="closeAddUser" type="button">×</button>
+    </div>
+
+    <form id="userForm">
+      <div class="form-grid">
+
+        <label>
+          Jméno
+          <input
+            id="newUserFirst"
+            type="text"
+            autocomplete="given-name"
+            required
+          />
+        </label>
+
+        <label>
+          Příjmení
+          <input
+            id="newUserLast"
+            type="text"
+            autocomplete="family-name"
+            required
+          />
+        </label>
+
+        <label>
+          Přístupová role
+          <select id="newUserRole" required>
+            <option value="read">Read – pouze prohlížení</option>
+            <option value="write">Write – úpravy skladu</option>
+            <option value="admin">Admin – správce</option>
+          </select>
+        </label>
+
+        <label>
+          GitHub token uživatele
+          <input
+            id="newUserToken"
+            type="password"
+            autocomplete="off"
+            required
+          />
+        </label>
+
+      </div>
+
+      <p class="muted">
+        Pozvánka bude platná 5 minut. Uživatel musí odkaz otevřít
+        a potvrdit uložení přístupu.
+      </p>
+
+      <p class="form-error" id="userSaveStatus"></p>
+
+      <div class="dialog-footer">
+        <button
+          class="btn btn-light"
+          id="closeAddUser2"
+          type="button"
+        >
+          Zavřít
+        </button>
+
+        <button
+          class="btn btn-primary"
+          id="saveUserButton"
+          type="submit"
+        >
+          Uložit uživatele
+        </button>
+      </div>
+    </form>
+
+    <!-- Výsledek vytvoření pozvánky -->
+    <div id="inviteResult" class="hidden">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">POZVÁNKA VYTVOŘENA</p>
+          <h3>Předání přístupu</h3>
+        </div>
+      </div>
+
+      <p class="muted">
+        Zkopíruj nebo sdílej odkaz s novým uživatelem.
+        Pozvánka je platná 5 minut.
+      </p>
+
+      <label>
+        Odkaz na pozvánku
+        <input
+          id="inviteLink"
+          type="text"
+          readonly
+        />
+      </label>
+
+      <div class="dialog-footer">
+        <button
+          class="btn btn-light"
+          id="copyInviteOnly"
+          type="button"
+        >
+          Kopírovat odkaz
+        </button>
+
+        <button
+          class="btn btn-primary"
+          id="copyInvite"
+          type="button"
+        >
+          Sdílet pozvánku
+        </button>
+      </div>
+    </div>
+  </div>
+</dialog>

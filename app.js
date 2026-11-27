@@ -1,3 +1,4 @@
+
 const PROFILE_KEY = "sklad-profile-v1";
 const REPO_OWNER = "PepikVaio";
 const REPO_NAME = "safina_Warehouse_Data";
@@ -141,23 +142,64 @@ async function init() {
 
 function bind() {
   $("settingsBtn").onclick=openSettings;
+
   $("userManagementBtn").onclick=()=>openUsers("list");
 
-  $("listUsersBtn").onclick=()=>openUsers("list");
-  $("addUserBtn").onclick=()=>openUsers("add");
+  const listUsersBtn=$("listUsersBtn");
+  if(listUsersBtn) {
+    listUsersBtn.onclick=()=>openUsers("list");
+  }
 
-  $("closeUsers").onclick=()=>$("usersDialog").close();
+  const addUserBtn=$("addUserBtn");
+  if(addUserBtn) {
+    addUserBtn.onclick=()=>openUsers("add");
+  }
+
+  // Seznam uživatelů
+  const closeUsers=$("closeUsers");
+  if(closeUsers) {
+    closeUsers.onclick=()=>$("listUsersDialog").close();
+  }
+
+  const closeUsersList=$("closeUsersList");
+  if(closeUsersList) {
+    closeUsersList.onclick=()=>$("listUsersDialog").close();
+  }
+
+  // Přidání uživatele
+  const closeAddUser=$("closeAddUser");
+  if(closeAddUser) {
+    closeAddUser.onclick=()=>$("addUserDialog").close();
+  }
+
+  const closeAddUser2=$("closeAddUser2");
+  if(closeAddUser2) {
+    closeAddUser2.onclick=()=>$("addUserDialog").close();
+  }
+
   $("userForm").onsubmit=saveUser;
   $("copyInvite").onclick=shareInviteLink;
   $("copyInviteOnly").onclick=copyInviteLink;
+
   $("logoutBtn").onclick=logout;
   $("saveInvite").onclick=saveInvite;
 
+  // Profil uživatele
   $("closeSettings").onclick=()=>$("settingsDialog").close();
-  $("cancelSettings").onclick=()=>$("settingsDialog").close();
+
+  const closeSettings2=$("closeSettings2");
+  if(closeSettings2) {
+    closeSettings2.onclick=()=>$("settingsDialog").close();
+  }
+
+  const cancelSettings=$("cancelSettings");
+  if(cancelSettings) {
+    cancelSettings.onclick=()=>$("settingsDialog").close();
+  }
 
   $("settingsForm").onsubmit=saveSettings;
 
+  // Karty náhradních dílů
   $("newPartBtn").onclick=()=>{
     if(requireWriter()) openPart();
   };
@@ -168,6 +210,7 @@ function bind() {
   $("addSupplier").onclick=()=>addSupplierRow();
   $("partImage").onchange=previewImage;
 
+  // Vyhledávání a filtry
   $("searchInput").oninput=render;
   $("stockFilter").onchange=render;
 
@@ -175,6 +218,7 @@ function bind() {
     b.onclick=()=>switchView(b.dataset.view);
   });
 
+  // Příjem a výdej
   ["in","out"].forEach(mode=>{
     movementElement("form",mode).onsubmit=e=>saveMovement(e,mode);
 
@@ -193,6 +237,7 @@ function bind() {
     };
   });
 
+  // Detail dílu
   $("closeDetail").onclick=$("detailClose2").onclick=()=>$("detailDialog").close();
 
   $("detailEdit").onclick=()=>{
@@ -204,10 +249,12 @@ function bind() {
   $("detailStockIn").onclick=()=>openMovementFromDetail("in");
   $("detailStockOut").onclick=()=>openMovementFromDetail("out");
 
+  // Tisk
   $("detailPrint").onclick=()=>showPrint(currentDetailId);
   $("closePrint").onclick=()=>$("printDialog").close();
   $("printBtn").onclick=()=>window.print();
 
+  // Historie
   $("historySearch").oninput=renderHistory;
   $("historyFilter").onchange=renderHistory;
 }
@@ -772,14 +819,45 @@ async function openUsers(mode="list") {
 
   try {
     await refreshUsers();
-    renderUsers();
 
-    $("inviteResult").classList.add("hidden");
-    $("userForm").reset();
+    const settingsDialog=$("settingsDialog");
+    if(settingsDialog?.open) {
+      settingsDialog.close();
+    }
 
-    $("usersDialog").showModal();
+    if(mode==="list") {
+      const addDialog=$("addUserDialog");
+      if(addDialog?.open) {
+        addDialog.close();
+      }
+
+      renderUsers();
+
+      const listDialog=$("listUsersDialog");
+      if(!listDialog.open) {
+        listDialog.showModal();
+      }
+
+      return;
+    }
 
     if(mode==="add") {
+      const listDialog=$("listUsersDialog");
+      if(listDialog?.open) {
+        listDialog.close();
+      }
+
+      $("userForm").reset();
+      $("userForm").classList.remove("hidden");
+
+      $("inviteResult").classList.add("hidden");
+      $("userSaveStatus").textContent="";
+
+      const addDialog=$("addUserDialog");
+      if(!addDialog.open) {
+        addDialog.showModal();
+      }
+
       $("newUserFirst").focus();
       $("newUserFirst").scrollIntoView({
         behavior:"smooth",
@@ -1066,8 +1144,10 @@ async function saveUser(e) {
     const url=`${location.origin}${location.pathname}${location.search}#invite=${invite}`;
 
     $("inviteLink").value=url;
-    $("inviteResult").classList.remove("hidden");
     $("newUserToken").value="";
+
+    $("userForm").classList.add("hidden");
+    $("inviteResult").classList.remove("hidden");
 
     $("userSaveStatus").textContent=
       `Uživatel ${firstName} ${lastName} byl uložen do soukromého GitHub repozitáře. Pozvánka je platná 5 minut.`;
@@ -1263,10 +1343,20 @@ function applyPermissions() {
   const writer=!!currentUser&&isWriter();
   const admin=isAdmin();
 
-  $("userManagementBtn").classList.toggle("hidden",!admin);
+  const userManagementBtn=$("userManagementBtn");
+  if(userManagementBtn) {
+    userManagementBtn.classList.toggle("hidden",!admin);
+  }
 
-  $("listUsersBtn").disabled=!admin;
-  $("addUserBtn").disabled=!admin;
+  const listUsersBtn=$("listUsersBtn");
+  if(listUsersBtn) {
+    listUsersBtn.disabled=!admin;
+  }
+
+  const addUserBtn=$("addUserBtn");
+  if(addUserBtn) {
+    addUserBtn.disabled=!admin;
+  }
 
   updateUserSettings();
 
