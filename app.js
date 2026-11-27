@@ -113,6 +113,7 @@ async function init() {
 
     if(pendingInvite) {
       setState("Čeká se na potvrzení pozvánky");
+
     } else if(isConfigured(p)) {
       try {
         const allowed=await loadAll();
@@ -120,11 +121,13 @@ async function init() {
         if(!allowed) {
           openSettings();
         }
+
       } catch(e) {
         setState("Chyba připojení");
         toast(e.message);
         openSettings();
       }
+
     } else {
       setState("Nastav připojení");
       openSettings();
@@ -133,23 +136,9 @@ async function init() {
     render();
 
     if(pendingInvite) {
-      const description=$("inviteDescription");
-      const saveStatus=$("inviteSaveStatus");
-      const inviteDialog=$("inviteDialog");
-
-      if(description) {
-        description.textContent =
-          `Pozvánka pro ${pendingInvite.firstName} ${pendingInvite.lastName} · ${roleLabel(pendingInvite.role)}.`;
-      }
-
-      if(saveStatus) {
-        saveStatus.textContent="";
-      }
-
-      if(inviteDialog && !inviteDialog.open) {
-        inviteDialog.showModal();
-      }
+      await showPendingInviteDialog();
     }
+
   } catch(e) {
     console.error("Chyba inicializace:",e);
     setState("Chyba inicializace");
@@ -732,6 +721,14 @@ function readInviteFromUrl() {
   history.replaceState(null,"",location.pathname+location.search);
 }
 
+
+
+
+
+
+
+
+
 async function verifyPendingInvite() {
   if(!pendingInvite?.inviteExpiresAt) {
     throw new Error("Pozvánka nemá nastavenou platnost. Požádej správce o novou.");
@@ -776,6 +773,38 @@ async function verifyPendingInvite() {
     throw new Error("Údaje pozvánky neodpovídají záznamu uživatele.");
   }
 }
+
+
+async function showPendingInviteDialog() {
+  if(!pendingInvite) return;
+
+  const dialog=$("inviteDialog");
+
+  if(!dialog) {
+    console.warn("Pozvánkový dialog nebyl nalezen.");
+    setState("Pozvánka čeká na zobrazení");
+    return;
+  }
+
+  const description=$("inviteDescription");
+  const saveStatus=$("inviteSaveStatus");
+
+  if(description) {
+    description.textContent=
+      `Pozvánka pro ${pendingInvite.firstName} ${pendingInvite.lastName} · ${roleLabel(pendingInvite.role)}.`;
+  }
+
+  if(saveStatus) {
+    saveStatus.textContent="";
+  }
+
+  if(!dialog.open) {
+    dialog.showModal();
+  }
+}
+
+
+
 
 async function saveInvite() {
   if(!pendingInvite) return;
