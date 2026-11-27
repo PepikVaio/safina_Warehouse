@@ -222,7 +222,7 @@ function updateUserSettings() {
   if(nameField) {
     nameField.textContent=configured
       ? `${currentUser.lastName} ${currentUser.firstName}`
-      : "Uživatel";
+      : "Přihlásit";
   }
 
   // Označení typu účtu pod horním pásem.
@@ -233,8 +233,14 @@ function updateUserSettings() {
       : "Uživatel skladu";
   }
 
-  $("settingsFirstName").textContent=currentUser?.firstName||"—";
-  $("settingsLastName").textContent=currentUser?.lastName||"—";
+  $("settingsFirstName").textContent=configured
+    ? currentUser.firstName
+    : "Přihlásit";
+
+  $("settingsLastName").textContent=configured
+    ? currentUser.lastName
+    : "";
+
   $("settingsRole").textContent=roleLabel(currentRole);
 
   // Poslední přihlášení.
@@ -615,18 +621,8 @@ function logout() {
 
   localStorage.removeItem(PROFILE_KEY);
 
-  currentUser=null;
-  currentRole="read";
-  currentLastLogin=null;
-  usersData={users:[]};
-  usersFileSha=null;
-
-  updateIdentity();
-  applyPermissions();
-
-  setState("Odhlášeno");
-
-  openSettings();
+  // Obnovení stránky odstraní načtená data skladu z paměti aplikace.
+  window.location.reload();
 }
 
 
