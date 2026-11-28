@@ -2481,25 +2481,36 @@ function stopQrScanner() {
   }
 }
 
+
 function showPrint(id) {
   const p=parts.find(x=>x.id===id);
 
   if(!p) return;
 
-  $("printQr").innerHTML="";
+  const labelData={
+    id:p.id,
+    name:p.name||"",
+    partNumber:p.partNumber||"",
+    suppliers:(p.suppliers||[])
+      .filter(s=>s?.name)
+      .map(s=>({name:s.name})),
+    machine:p.machine||""
+  };
 
-  if(window.QRCode) {
-    new QRCode($("printQr"),{
-      text:p.id,
-      width:190,
-      height:190,
-      correctLevel:QRCode.CorrectLevel.M
-    });
-  } else {
-    $("printQr").textContent=p.id;
+  localStorage.setItem(
+    "sklad-print-label",
+    JSON.stringify(labelData)
+  );
+
+  const printWindow=window.open(
+    new URL("print-label.html",window.location.href).href,
+    "_blank"
+  );
+
+  if(!printWindow) {
+    localStorage.removeItem("sklad-print-label");
+    toast("Povol vyskakovací okna pro tisk štítku.");
   }
-
-  $("printDialog").showModal();
 }
 
 
