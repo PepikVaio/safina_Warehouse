@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#172033" />
+  <title>Sklad – Náhradní díly</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/buttons.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/dialogs.css">
+  <link rel="stylesheet" href="css/mobile.css">
+  <link rel="stylesheet" href="css/cards.css">
+</head>
+
+<body>
+
+  <!-- Main stock screen -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div>
+        <strong>Sklad - T6</strong>
+        <small>Safina, a.s.</small>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <span class="save-state" id="saveState">Nepřipojeno</span>
+      <button class="btn btn-primary" id="newPartBtn">＋ Nová karta</button>
+      <button class="btn btn-light" id="settingsBtn">
+        <span id="userIdentity"></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="page-heading">
+      <div>
+        <p class="eyebrow" id="pageEyebrow">SKLADOVÁ EVIDENCE</p>
+        <h1 id="pageTitle">Přehled skladu</h1>
+        <p class="muted" id="pageDescription">Sdílený sklad synchronizovaný přes soukromý GitHub.</p>
+      </div>
+    </section>
+
+    <section class="stats">
+      <article class="stat-card">
+        <span>Počet položek</span>
+        <strong id="statParts">0</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Celkem kusů</span>
+        <strong id="statQty">0</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Pod minimem</span>
+        <strong id="statLow">0</strong>
+      </article>
+    </section>
+
+    <nav class="main-nav">
+      <button class="nav-btn active" data-view="stock">▦ Sklad</button>
+      <button class="nav-btn" data-view="in">Příjem</button>
+      <button class="nav-btn" data-view="out">Výdej</button>
+      <button class="nav-btn" data-view="history">◷ Historie</button>
+    </nav>
+
+    <div id="appView"></div>
+
+  </main>
+
+  <!-- Other application pages and dialogs -->
+  <div id="appScreens"></div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const cacheVersion = Date.now();
+
+    const viewFiles = [
+      "pages/cards/stock.html",
+      "pages/cards/receipt.html",
+      "pages/cards/issue.html",
+      "pages/cards/history.html"
+    ];
+
+    const dialogFiles = [
+      "pages/dialogs/add-user.html",
+      "pages/dialogs/send-invite.html",
+      "pages/dialogs/list-users.html",
+      "pages/dialogs/login.html",
+      "pages/dialogs/new-card.html",
+      "pages/dialogs/part-detail.html",
+      "pages/dialogs/print-label.html",
+      "pages/dialogs/user.html"
+    ];
+
+    async function loadFiles(files) {
+      return Promise.all(files.map(async file => {
+        const response = await fetch(`${file}?v=${cacheVersion}`, {cache: "no-store"});
+        if (!response.ok) {
+          throw new Error(`Nepodařilo se načíst ${file}: ${response.status}`);
+        }
+        return response.text();
+      }));
+    }
+
+    async function loadScreens() {
+      try {
+        const [views, dialogs] = await Promise.all([
+          loadFiles(viewFiles),
+          loadFiles(dialogFiles)
+        ]);
+
+        document.getElementById("appView").innerHTML = views.join("\n");
+        document.getElementById("appScreens").innerHTML = dialogs.join("\n");
+
+        const qrScript = document.createElement("script");
+        qrScript.src =
+          "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+
+        qrScript.onload = loadApp;
+        qrScript.onerror = () => {
+          showLoadError("Nepodařilo se načíst knihovnu QR kódů.");
+        };
+
+        document.body.appendChild(qrScript);
+      } catch (error) {
+        showLoadError(error.message);
+      }
+    }
+
+    function loadApp() {
+      const scripts = [
+        "js/core.js",
+        "js/account.js",
+        "js/users.js",
+        "js/storage.js",
+        "js/views.js",
+        "js/parts.js",
+        "js/movements.js",
+        "js/details.js",
+        "js/qr.js",
+        "js/app.js"
+      ];
+
+      let index = 0;
+
+      function loadNext() {
+        if (index >= scripts.length) return;
+
+        const file = scripts[index++];
+        const script = document.createElement("script");
+
+        script.src = `${file}?v=${cacheVersion}`;
+        script.onload = loadNext;
+        script.onerror = () => {
+          showLoadError(`Nepodařilo se načíst ${file}.`);
+        };
+
+        document.body.appendChild(script);
+      }
+
+      loadNext();
+    }
+
+    function showLoadError(message) {
+      const loader = document.getElementById("toast");
+      loader.textContent = message;
+      loader.classList.add("show");
+    }
+
+    loadScreens();
+  </script>
+
+</body>
+
+</html>

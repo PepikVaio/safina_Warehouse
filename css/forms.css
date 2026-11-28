@@ -1,0 +1,112 @@
+.search-wrap input {
+    border: 0;
+    outline: 0;
+    padding: 11px 0;
+    width: 100%;
+    font: inherit;
+    font-size: 13px
+}
+
+.toolbar select,
+.field input,
+.field select,
+.field textarea,
+.supplier-row input,
+.location-row input {
+    border: 1px solid #dfe5ed;
+    border-radius: 8px;
+    padding: 10px 11px;
+    background: #fff;
+    color: #172033;
+    font: inherit;
+    font-size: 13px;
+    min-width: 0
+}
+
+.toolbar select {
+    min-width: 160px
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+    margin-top: 20px
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0
+}
+
+.field span,
+.section-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475467
+}
+
+.field.full,
+.section-label.full,
+.full {
+    grid-column: 1/-1
+}
+
+.field textarea {
+    resize: vertical
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 7px
+}
+
+.inline-error {
+    color: #c0392b;
+    font-size: 12px;
+    margin: 0
+}
+
+.supplier-list,
+.location-list {
+    display: grid;
+    gap: 9px
+}
+
+.supplier-row,
+.location-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr auto;
+    gap: 8px;
+    align-items: center
+}
+
+.location-row {
+    grid-template-columns: 1fr 1fr 100px auto
+}
+
+.new-location-inputs {
+    display: flex;
+    gap: 8px
+}
+
+.new-location-inputs input {
+    width: 50%;
+    min-width: 0;
+    border: 1px solid #dfe5ed;
+    border-radius: 8px;
+    padding: 10px 11px;
+    font: inherit;
+    font-size: 13px
+}
+
+.invite-status {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #475467;
+    min-height: 0
+}

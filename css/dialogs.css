@@ -1,0 +1,632 @@
+/* Shared dialog shell */
+.dialog {
+    border: 0;
+    border-radius: 16px;
+    padding: 23px;
+    width: min(760px, calc(100% - 24px));
+    max-height: 92vh;
+    overflow: auto;
+    box-shadow: 0 22px 80px #0f172a40;
+}
+
+.dialog::backdrop {
+    background: #11182780;
+}
+
+.dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    height: 70px;
+    border-bottom: 1px solid #edf0f4;
+    padding-bottom: 15px;
+}
+
+.dialog-header-content {
+    flex: 1;
+}
+
+.dialog-header h2 {
+    margin: 0;
+    font-size: 22px;
+}
+
+/* Dialog forms share the same top spacing and full-width field behavior. */
+/* Default action layout: all buttons aligned to the right. */
+.dialog-footer {
+    --dialog-action-gap: 9px;
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--dialog-action-gap);
+    border-top: 1px solid #edf0f4;
+    padding-top: 16px;
+    margin-top: 20px;
+}
+
+.dialog-footer .btn {
+    padding-left: 8px;
+    padding-right: 8px;
+    white-space: nowrap;
+}
+
+/* Split action layout: one group at each side. */
+.dialog-footer--split {
+    justify-content: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.dialog-footer__group {
+    display: flex;
+    gap: var(--dialog-action-gap, 9px);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.dialog-footer__group--right {
+    margin-left: auto;
+}
+
+/* Keep all three account actions on one row, matching the original layout. */
+.dialog-footer--single-row {
+    flex-wrap: nowrap;
+}
+
+.dialog-footer--single-row .dialog-footer__group {
+    flex-shrink: 0;
+}
+
+.dialog-footer--single-row .dialog-footer__group--right {
+    margin-left: auto;
+}
+
+
+
+/* Explanatory notes below dialog fields use one spacing and text style. */
+.dialog-note {
+    display: block;
+    margin: 5px 5px 0;
+    color: #667085;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.field .dialog-note {
+    margin-top: 0;
+}
+
+/* Part detail footer: stock actions above, secondary actions below. */
+.dialog-footer--part-detail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "stock stock"
+        "qr main";
+    align-items: center;
+}
+
+.detail-stock-actions {
+    grid-area: stock;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--dialog-action-gap);
+    width: 100%;
+}
+
+.detail-stock-actions .btn {
+    width: 100%;
+}
+
+.detail-qr-action {
+    grid-area: qr;
+    justify-self: start;
+}
+
+.detail-main-actions {
+    grid-area: main;
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--dialog-action-gap);
+}
+
+/* User list and profile dialogs */
+.users-list {
+    display: grid;
+    gap: 8px;
+    margin: 18px 0 24px;
+}
+
+.user-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 180px auto;
+    gap: 10px;
+    align-items: center;
+    padding: 11px 12px;
+    border: 1px solid #e5eaf1;
+    border-radius: 10px;
+    background: #fbfcfe;
+}
+
+.user-row-info strong,
+.user-row-info small {
+    display: block;
+}
+
+.user-row-info strong {
+    font-size: 13px;
+}
+
+.user-row-info small {
+    font-size: 11px;
+    color: #718096;
+    margin-top: 3px;
+}
+
+.user-row select {
+    font: inherit;
+    font-size: 13px;
+    padding: 8px;
+    border: 1px solid #dfe5ed;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.user-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.user-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.user-status.active .user-status-dot {
+    background: #22c55e;
+    box-shadow: 0 0 6px #22c55e;
+}
+
+.user-status.inactive .user-status-dot {
+    background: #ef4444;
+    box-shadow: 0 0 6px #ef4444;
+}
+
+.user-role-label {
+    margin-left: 1px;
+    color: #8b95a5;
+}
+
+#listUsersDialog h3 {
+    font-size: 16px;
+    margin: 20px 0 8px;
+}
+
+.users-list + .form-grid {
+    margin-top: 10px;
+}
+
+.user-profile-info {
+    display: block;
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid #e5eaf1;
+    border-radius: 12px;
+    background: #fbfcfe;
+}
+
+.profile-info-grid {
+    display: grid;
+    grid-template-columns: 40% 60%;
+    width: 100%;
+    column-gap: 12px;
+    align-items: center;
+}
+
+.profile-info-grid > div,
+.profile-info-grid > strong {
+    padding: 11px 5px;
+    border-bottom: 1px solid #e9edf3;
+    font-size: 13px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.profile-info-grid > div {
+    color: #667085;
+}
+
+.profile-info-grid > strong {
+    color: #172033;
+    font-weight: 700;
+}
+
+.profile-info-grid .profile-info-heading {
+    font-size: 13px;
+    font-weight: 700;
+    color: #172033;
+    padding-top: 5px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #667085;
+}
+
+.profile-info-grid > div:nth-last-child(2),
+.profile-info-grid > strong:last-child {
+    border-bottom: 0;
+}
+
+.profile-token {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #e5eaf1;
+}
+
+.profile-token .field {
+    width: 100%;
+}
+
+.profile-token .field span {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475467;
+}
+
+.profile-token input {
+    width: 100%;
+    background: #f8fafc;
+    color: #667085;
+    cursor: default;
+}
+
+/* Detail and QR label dialogs */
+.detail-top {
+    display: grid;
+    grid-template-columns: minmax(180px, 280px) 1fr;
+    gap: 20px;
+    align-items: start;
+    margin: 18px 0;
+}
+
+.detail-image {
+    display: block;
+    width: 100%;
+    max-height: 260px;
+    object-fit: contain;
+    background: #f8fafc;
+    border: 1px solid #e6eaf0;
+    border-radius: 10px;
+    cursor: default;
+}
+
+#detailContent h3 {
+    margin: 22px 0 10px;
+    font-size: 15px;
+}
+
+#detailContent p {
+    margin: 0 0 9px;
+    font-size: 13px;
+}
+
+.qr-preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px dashed #d5dce7;
+    border-radius: 10px;
+    padding: 13px;
+}
+
+.qr-box {
+    min-width: 90px;
+    min-height: 90px;
+    display: grid;
+    place-items: center;
+}
+
+.small {
+    font-size: 11px;
+    margin-top: 5px;
+}
+
+.label-preview {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid #cfd5df;
+    padding: 14px;
+    width: fit-content;
+    min-width: 260px;
+    margin: 24px auto;
+}
+
+.label-preview strong,
+.label-preview small {
+    display: block;
+    max-width: 190px;
+    overflow-wrap: anywhere;
+}
+
+.label-preview small {
+    font-size: 11px;
+    color: #667085;
+    margin-top: 4px;
+}
+
+.print-label-name {
+    min-height: 18mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 17pt;
+    font-weight: bold;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+    border-bottom: 1px solid #222;
+    padding-bottom: 2mm;
+}
+
+.print-label-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    gap: 2mm;
+    padding-top: 2mm;
+}
+
+.print-label-qr {
+    width: 48%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.print-label-qr img,
+.print-label-qr canvas {
+    width: 100% !important;
+    height: auto !important;
+    image-rendering: pixelated;
+}
+
+.print-label-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4mm;
+}
+
+.print-field {
+    overflow-wrap: anywhere;
+}
+
+.print-field-label {
+    font-size: 7pt;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 1mm;
+}
+
+.print-field-value {
+    font-size: 10pt;
+    font-weight: bold;
+    line-height: 1.15;
+}
+
+#inviteDialog {
+    max-width: 480px;
+}
+
+#inviteDialog p {
+    line-height: 1.55;
+    font-size: 13px;
+    margin: 16px 0;
+}
+
+@media (max-width: 760px) {
+    .dialog {
+        padding: 17px;
+    }
+
+    .dialog-footer--split {
+        align-items: stretch;
+    }
+
+    .dialog-footer__group {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .dialog-footer__group--right {
+        margin-left: 0;
+        justify-content: flex-end;
+    }
+
+    .dialog-footer--single-row {
+        flex-wrap: nowrap;
+        align-items: center;
+    }
+
+    .dialog-footer--single-row .dialog-footer__group {
+        width: auto;
+        flex-shrink: 0;
+    }
+
+    .dialog-footer--single-row .dialog-footer__group--right {
+        margin-left: auto;
+        justify-content: flex-end;
+    }
+
+    .user-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .user-row-info {
+        grid-column: 1 / -1;
+    }
+
+    .user-row select {
+        grid-column: 1;
+        width: 100%;
+    }
+
+    .user-actions {
+        grid-column: 2;
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
+    .user-actions .btn {
+        white-space: nowrap;
+    }
+
+    .user-profile-info {
+        padding: 12px;
+    }
+
+    .profile-info-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+        column-gap: 8px;
+    }
+
+    .profile-info-grid > div,
+    .profile-info-grid > strong {
+        padding: 10px 5px;
+        font-size: 12px;
+    }
+
+    .profile-info-grid .profile-info-heading {
+        font-size: 13px;
+        font-weight: 700;
+        color: #172033;
+        border-bottom: 2px solid #667085;
+    }
+
+    .detail-top {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-image {
+        max-height: 220px;
+    }
+}
+
+@page {
+    size: 63.5mm 76.2mm;
+    margin: 0;
+}
+
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+
+    #printDialog,
+    #printDialog * {
+        visibility: visible !important;
+    }
+
+    #printDialog {
+        position: absolute !important;
+        display: block !important;
+        inset: 0 auto auto 0 !important;
+        width: 63.5mm !important;
+        height: 76.2mm !important;
+        max-width: none !important;
+        max-height: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        background: white !important;
+    }
+
+    #printDialog .dialog-header,
+    #printDialog .dialog-footer {
+        display: none !important;
+    }
+
+    #printLabel {
+        width: 63.5mm !important;
+        height: 76.2mm !important;
+        margin: 0 !important;
+        padding: 3mm !important;
+        box-shadow: none !important;
+    }
+}
+
+/* Camera scanner dialog created by qr.js */
+.qr-scanner-dialog {
+    width: min(440px, calc(100% - 32px));
+    max-height: 90vh;
+    padding: 20px;
+    background: #fff;
+    color: #172033;
+}
+
+.qr-scanner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.qr-scanner-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.qr-scanner-stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #111;
+}
+
+.qr-scanner-video {
+    display: block;
+    width: 100%;
+    min-height: 220px;
+    object-fit: cover;
+}
+
+.qr-scanner-frame {
+    position: absolute;
+    top: 20%;
+    left: 15%;
+    width: 70%;
+    height: 60%;
+    border: 3px solid #22c55e;
+    border-radius: 12px;
+    pointer-events: none;
+}
+
+.qr-scanner-status {
+    margin: 16px 0 0;
+    text-align: center;
+}
+
+.qr-scanner-cancel {
+    width: 100%;
+    margin-top: 12px;
+}
+
+@media print {
+    #printLabel {
+        position: absolute;
+        left: 0;
+        top: 0;
+        margin: 0;
+        border: 0;
+    }
+}

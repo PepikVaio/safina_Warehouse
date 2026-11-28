@@ -1,0 +1,42 @@
+<section class="view" id="stockView">
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span>⌕</span>
+      <input id="searchInput" type="search" placeholder="Hledat název, číslo, dodavatele…" />
+    </div>
+
+    <button class="btn btn-light" id="takePhotoBtn" type="button">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 4h-4l-2 3H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z" />
+        <circle cx="12" cy="13" r="3" />
+      </svg>
+      Vyfotit
+    </button>
+
+    <select id="stockFilter">
+      <option value="all">Všechny položky</option>
+      <option value="in">Na skladě</option>
+      <option value="empty">Vyprodáno</option>
+      <option value="low">Pod minimálním množstvím</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Název</th>
+          <th>Objednací číslo</th>
+          <th>Celkem</th>
+          <th>Minimum</th>
+          <th>Umístění</th>
+          <th>Dodavatel</th>
+          <th>Cena</th>
+          <th>Datum posledního naskladnění</th>
+        </tr>
+      </thead>
+      <tbody id="partsTable"></tbody>
+    </table>
+  </div>
+</section>

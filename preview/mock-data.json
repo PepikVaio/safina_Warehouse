@@ -1,0 +1,16 @@
+{
+  "users": [
+    { "firstName": "Testovací", "lastName": "Správce", "role": "admin", "status": "active" },
+    { "firstName": "Jana", "lastName": "Skladová", "role": "write", "status": "active" },
+    { "firstName": "Petr", "lastName": "Kontrolní", "role": "read", "status": "active" }
+  ],
+  "parts": [
+    { "id": "ND-00001", "name": "Ložisko 6204", "partNumber": "SKF-6204-2RS", "internalCard": "K-1042", "costCenter": "T6", "machine": "Lis 01", "minimumQty": 8, "note": "Ukázková skladová položka", "suppliers": [{ "name": "Testovací dodavatel", "price": "125 Kč" }], "locations": [{ "rack": "A1", "box": "03", "qty": 12, "stockedAt": "2026-11-20" }] },
+    { "id": "ND-00002", "name": "Řemen SPA 1250", "partNumber": "GATES-SPA1250", "internalCard": "K-1088", "costCenter": "T6", "machine": "Dopravník 2", "minimumQty": 5, "note": "Položka pod minimem", "suppliers": [{ "name": "Fiktivní servis", "price": "390 Kč" }], "locations": [{ "rack": "B2", "box": "11", "qty": 2, "stockedAt": "2026-11-18" }] },
+    { "id": "ND-00003", "name": "Snímač indukční M12", "partNumber": "SEN-M12-01", "internalCard": "K-1151", "costCenter": "Údržba", "machine": "Linka 3", "minimumQty": 2, "note": "", "suppliers": [{ "name": "Demo Elektro", "price": "860 Kč" }], "locations": [] }
+  ],
+  "history": [
+    { "at": "2026-11-20T08:30:00.000Z", "user": "Testovací Správce", "type": "in", "partId": "ND-00001", "partName": "Ložisko 6204", "location": "A1 / 03", "qty": 12 },
+    { "at": "2026-11-18T13:10:00.000Z", "user": "Jana Skladová", "type": "out", "partId": "ND-00002", "partName": "Řemen SPA 1250", "location": "B2 / 11", "qty": 1 }
+  ]
+}

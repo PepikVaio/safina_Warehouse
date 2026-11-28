@@ -1,0 +1,75 @@
+@media (max-width:760px) {
+    .topbar {
+        height: auto;
+        min-height: 64px;
+        padding: 10px 12px
+    }
+
+    .save-state {
+        display: none
+    }
+
+    .container {
+        padding: 24px 14px 50px
+    }
+
+    .top-actions {
+        gap: 7px;
+        flex-wrap: wrap;
+        justify-content: flex-end
+    }
+
+    .top-actions .btn {
+        font-size: 11px;
+        padding: 8px 9px
+    }
+
+    .user-identity {
+        width: 100%;
+        text-align: right;
+        font-size: 11px
+    }
+
+    .admin-test {
+        display: grid
+    }
+
+    .admin-test .btn {
+        width: 100%
+    }
+
+    .top-actions #userManagementBtn {
+        order: 3
+    }
+
+    .toolbar select {
+        width: 100%
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr
+    }
+
+    .field.full,
+    .section-label.full,
+    .full {
+        grid-column: auto
+    }
+
+    .supplier-row {
+        grid-template-columns: 1fr 1fr auto
+    }
+
+    .location-row {
+        grid-template-columns: 1fr 1fr 70px auto
+    }
+}
+
+/* Keep form text readable and prevent zoom when typing on iOS Safari. */
+@media (max-width:760px) {
+    input,
+    select,
+    textarea {
+        font-size: 16px !important
+    }
+}

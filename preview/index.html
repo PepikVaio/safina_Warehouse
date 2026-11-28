@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Náhled oken – Safina Warehouse</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/buttons.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/dialogs.css">
+  <link rel="stylesheet" href="../css/mobile.css">
+  <link rel="stylesheet" href="../css/cards.css">
+  <style>
+    body { padding: 20px; }
+    .preview-selector { max-width: 560px; margin: 0 auto 20px; }
+    .preview-selector select { width: 100%; padding: 10px; }
+    .preview-note { max-width: 560px; margin: 0 auto 18px; color: #667085; }
+    #previewHost { min-height: 160px; }
+    #previewHost > main { padding: 0; }
+    #previewError { max-width: 560px; margin: 24px auto; padding: 16px; background: #fff; border: 1px solid #c33; color: #811; white-space: pre-wrap; }
+    .preview-qr { width: 116px; height: 116px; display: grid; place-items: center; border: 8px solid #172033; background: repeating-conic-gradient(#172033 0 25%, #fff 0 50%) 0 / 18px 18px; color: #172033; font-size: 11px; font-weight: 700; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="preview-selector">
+    <label class="field">
+      <span>Vyber okno k náhledu</span>
+      <select id="fragmentSelect">
+        <optgroup label="Obrazovky">
+          <option value="cards/stock.html">Přehled skladu</option>
+          <option value="cards/receipt.html">Příjem zboží</option>
+          <option value="cards/issue.html">Výdej zboží</option>
+          <option value="cards/history.html">Historie pohybů</option>
+        </optgroup>
+        <optgroup label="Dialogy">
+          <option value="dialogs/add-user.html">Přidat uživatele</option>
+          <option value="dialogs/list-users.html">Seznam uživatelů</option>
+          <option value="dialogs/login.html">Přihlášení</option>
+          <option value="dialogs/new-card.html">Nová karta dílu</option>
+          <option value="dialogs/part-detail.html">Detail dílu</option>
+          <option value="dialogs/print-label.html">Tiskový štítek</option>
+          <option value="dialogs/send-invite.html">Odeslat pozvánku</option>
+          <option value="dialogs/user.html">Profil uživatele</option>
+        </optgroup>
+      </select>
+    </label>
+  </div>
+  <p class="preview-note">Zobrazuje se původní HTML a CSS z projektu. Údaje jsou pouze fiktivní a nic se neukládá.</p>
+  <div id="previewHost"></div>
+
+  <script>
+    const select = document.getElementById("fragmentSelect");
+    const host = document.getElementById("previewHost");
+    let previewData;
+
+    async function loadPreview() {
+      host.innerHTML = "";
+      try {
+        const response = await fetch(`../pages/${select.value}`, { cache: "no-store" });
+        if (!response.ok) throw new Error("Soubor okna se nepodařilo načíst.");
+        host.innerHTML = await response.text();
+        fillPreview(select.value, previewData);
+        const dialog = host.querySelector("dialog");
+        if (dialog) {
+          dialog.setAttribute("open", "");
+          dialog.style.position = "relative";
+          dialog.style.display = "block";
+          dialog.style.margin = "24px auto";
+          dialog.style.inset = "auto";
+        } else {
+          host.querySelector(".view")?.classList.remove("hidden");
+        }
+      } catch (error) {
+        const box = document.createElement("pre");
+        box.id = "previewError";
+        box.textContent = error.message;
+        host.appendChild(box);
+      }
+    }
+
+    function setValue(id, value) {
+      const field = host.querySelector(`#${id}`);
+      if (field) field.value = value;
+    }
+
+    function fillPreview(file, data) {
+      const parts = data.parts || [];
+      const users = data.users || [];
+      const sample = parts[0];
+      if (file === "cards/stock.html") {
+        const table = host.querySelector("#partsTable");
+        table.innerHTML = parts.map(p => {
+          const qty = (p.locations || []).reduce((sum, location) => sum + (Number(location.qty) || 0), 0);
+          const firstLocation = p.locations?.[0];
+          const supplier = p.suppliers?.[0] || {};
+          return `<tr><td><strong>${escapeHtml(p.name)}</strong><br><small>${escapeHtml(p.id)}</small></td><td>${escapeHtml(p.partNumber || "—")}</td><td class="qty">${qty} ks</td><td>${Number(p.minimumQty) || "—"}</td><td>${firstLocation ? `${escapeHtml(firstLocation.rack)} / ${escapeHtml(firstLocation.box)} (${qty})` : "—"}</td><td>${escapeHtml(supplier.name || "—")}</td><td>${escapeHtml(supplier.price || "—")}</td><td>${firstLocation?.stockedAt || "—"}</td></tr>`;
+        }).join("");
+      }
+      if (file === "cards/receipt.html" || file === "cards/issue.html") {
+        const prefix = file === "cards/receipt.html" ? "receipt" : "issue";
+        const partSelect = host.querySelector(`#${prefix}Part`);
+        partSelect.innerHTML = parts.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} (${escapeHtml(p.id)})</option>`).join("");
+        const locationSelect = host.querySelector(`#${prefix}Location`);
+        locationSelect.innerHTML = (sample.locations || []).map((l, i) => `<option value="${i}">${escapeHtml(l.rack)} / ${escapeHtml(l.box)} – ${l.qty} ks</option>`).join("");
+        if (file === "cards/receipt.html") locationSelect.innerHTML += '<option value="new">＋ Zadat nové umístění</option>';
+        setValue(`${prefix}Qty`, "3");
+        const desc = host.querySelector(`#${prefix}Description`);
+        if (desc) desc.textContent = file === "cards/receipt.html" ? "Ukázkový příjem pro Ložisko 6204." : "Ukázkový výdej ze skladu.";
+      }
+      if (file === "cards/history.html") {
+        const table = host.querySelector("#historyTable");
+        table.innerHTML = (data.history || []).map(h => `<tr><td>${new Date(h.at).toLocaleString("cs-CZ")}</td><td>${escapeHtml(h.user)}</td><td>${escapeHtml(h.partName)}<br><small>${escapeHtml(h.partId)}</small></td><td>${h.type === "in" ? "Naskladnění" : "Vyskladnění"}</td><td>${escapeHtml(h.location)}</td><td class="qty">${h.type === "in" ? "+" : "−"}${h.qty} ks</td></tr>`).join("");
+      }
+      if (file.endsWith("add-user.html")) {
+        setValue("newUserFirst", "Eva"); setValue("newUserLast", "Testovací"); setValue("newUserRole", "write");
+        setValue("newUserToken", "fiktivni-testovaci-klic");
+        const label = host.querySelector('#newUserToken')?.closest(".field");
+        if (label) label.querySelector("span").textContent = "Fiktivní testovací klíč";
+      }
+      if (file.endsWith("list-users.html")) {
+        const list = host.querySelector("#usersList");
+        list.innerHTML = users.map(u => `<div class="user-row"><div class="user-row-info"><strong>${escapeHtml(u.lastName)} ${escapeHtml(u.firstName)}</strong><small><span class="user-status active"><span class="user-status-dot"></span>Aktivní</span><span class="user-role-label"> | ${escapeHtml(u.role)}</span></small></div><span></span><div class="user-actions"><button class="btn btn-light" type="button">Deaktivovat</button><button class="btn btn-remove" type="button">×</button></div></div>`).join("");
+      }
+      if (file.endsWith("login.html")) {
+        setValue("accessToken", "fiktivni-token-pro-nahled");
+        const label = host.querySelector('#accessToken')?.closest(".field");
+        if (label) label.querySelector("span").textContent = "Ukázkový přístupový údaj (fiktivní)";
+      }
+      if (file.endsWith("new-card.html")) {
+        setValue("partName", sample.name); setValue("partNumber", sample.partNumber); setValue("partInternalId", "ND-00004");
+        setValue("partCard", "K-1204"); setValue("partCostCenter", "T6"); setValue("partMachine", "Lis 02"); setValue("partMinimum", "6"); setValue("partNote", "Ukázková poznámka k dílu.");
+        host.querySelector("#suppliers").innerHTML = '<div class="supplier-row"><input value="Ukázkový dodavatel"><input value="245 Kč"><button type="button" class="btn btn-remove supplier-remove" aria-label="Odebrat dodavatele">×</button></div>';
+      }
+      if (file.endsWith("part-detail.html")) {
+        host.querySelector("#detailTitle").textContent = sample.name;
+        host.querySelector("#detailContent").innerHTML = `<div class="detail-top"><div><p><strong>Interní ID:</strong> ${escapeHtml(sample.id)}</p><p><strong>Objednací číslo:</strong> ${escapeHtml(sample.partNumber)}</p><p><strong>Celkové množství:</strong> 12 ks</p><p><strong>Minimální množství:</strong> 8</p><p><strong>Interní karta:</strong> K-1042</p><p><strong>Středisko:</strong> T6</p><p><strong>Zařízení:</strong> Lis 01</p><p><strong>Poznámka:</strong> Ukázková skladová položka</p></div></div><h3>Dodavatelé</h3><ul><li>Testovací dodavatel – 125 Kč</li></ul><h3>Umístění</h3><div class="table-wrap"><table><thead><tr><th>Umístění</th><th>Množství</th><th>Datum naskladnění</th></tr></thead><tbody><tr><td>A1 / 03</td><td>12 ks</td><td>20. 11. 2026</td></tr></tbody></table></div>`;
+      }
+      if (file.endsWith("print-label.html")) {
+        host.querySelector("#printName").textContent = sample.name;
+        host.querySelector("#printInfo").innerHTML = `<strong>${escapeHtml(sample.id)}</strong><br>${escapeHtml(sample.partNumber)}`;
+        host.querySelector("#printQr").innerHTML = '<div class="preview-qr">UKÁZKOVÝ<br>QR</div>';
+      }
+      if (file.endsWith("send-invite.html")) setValue("inviteLink", "preview://pozvanka/eva-testovaci");
+      if (file.endsWith("user.html")) {
+        setText("settingsFirstName", "Testovací"); setText("settingsLastName", "Správce");
+        setText("settingsAccountType", "Administrátor · fiktivní účet"); setText("settingsRole", "Admin – správce");
+        setText("settingsLastLogin", "28. 11. 2026, 09:30"); setText("settingsOperationCount", "7"); setText("appVersion", "Náhled");
+        host.querySelector("#userProfileInfo")?.classList.remove("hidden");
+      }
+    }
+    function setText(id, value) { const el = host.querySelector(`#${id}`); if (el) el.textContent = value; }
+    function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]); }
+
+    select.addEventListener("change", loadPreview);
+    fetch("mock-data.json").then(r => { if (!r.ok) throw new Error("Mock data nenalezena."); return r.json(); })
+      .then(data => { previewData = data; loadPreview(); })
+      .catch(error => { host.textContent = error.message; });
+  </script>
+</body>
+</html>

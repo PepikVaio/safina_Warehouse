@@ -1,0 +1,32 @@
+<dialog class="dialog" id="listUsersDialog">
+  <div>
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">SPRÁVA PŘÍSTUPŮ</p>
+        <h2>Seznam uživatelů</h2>
+      </div>
+
+      <button class="icon-btn" id="closeUsers" type="button">×</button>
+    </div>
+
+    <div id="usersList" class="users-list">
+      <p class="muted">Načítání uživatelů…</p>
+    </div>
+
+    <div class="dialog-footer dialog-footer--split dialog-footer--single-row">
+      <button class="btn btn-light" id="addUserBtn" type="button">
+        Přidat uživatele
+      </button>
+
+      <div class="dialog-footer__group dialog-footer__group--right">
+        <button class="btn btn-light" id="closeUsersList" type="button">
+          Zrušit
+        </button>
+
+        <button class="btn btn-primary" id="saveUsersList" type="button">
+          Uložit
+        </button>
+      </div>
+    </div>
+  </div>
+</dialog>

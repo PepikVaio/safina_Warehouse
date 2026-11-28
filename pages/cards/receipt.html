@@ -1,0 +1,46 @@
+<section class="view hidden" id="receiptView">
+  <div class="panel movement-panel">
+    <p class="eyebrow" id="receiptEyebrow">PŘÍJEM MATERIÁLU</p>
+
+    <h2 id="receiptTitle">Příjem</h2>
+
+    <p class="muted" id="receiptDescription"></p>
+
+    <form class="form-grid" id="receiptForm">
+      <label class="field full">
+        <span>Náhradní díl</span>
+        <select id="receiptPart" required></select>
+      </label>
+
+      <label class="field full">
+        <span>Umístění</span>
+        <select id="receiptLocation" required></select>
+      </label>
+
+      <div class="field full hidden" id="receiptNewLocationFields">
+        <span>Nové umístění</span>
+        <div class="new-location-inputs">
+          <input id="receiptNewRack" placeholder="Regál" />
+          <input id="receiptNewBox" placeholder="Box" />
+        </div>
+      </div>
+
+      <label class="field">
+        <span>Množství (ks)</span>
+        <input id="receiptQty" type="number" min="1" step="1" value="1" required />
+      </label>
+
+      <p class="inline-error full" id="receiptError"></p>
+
+      <div class="form-actions full">
+        <button class="btn btn-light" id="receiptCancel" type="button">
+          Zpět
+        </button>
+
+        <button class="btn btn-primary" id="receiptSubmit" type="submit">
+          Uložit
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

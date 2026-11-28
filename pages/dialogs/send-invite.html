@@ -1,0 +1,32 @@
+<dialog class="dialog" id="sendInviteDialog">
+  <div>
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">SPRÁVA PŘÍSTUPŮ</p>
+        <h2>Pozvánka připravena</h2>
+      </div>
+
+      <button class="icon-btn" id="closeSendInvite" type="button">×</button>
+    </div>
+
+    <form>
+      <div class="form-grid">
+        <label class="field full">
+          <span>Odkaz na pozvánku</span>
+          <input id="inviteLink" type="text" readonly autocomplete="off" />
+        </label>
+      </div>
+
+      <p class="muted dialog-note">
+        Z bezpečnostních důvodů je odkaz na pozvánku platný pouze 5 minut.
+        Po uplynutí této doby vyprší jeho platnost a bude nutné vytvořit novou pozvánku.
+      </p>
+
+      <div class="dialog-footer">
+        <button class="btn btn-primary" id="copyInvite" type="button">
+          Sdílet pozvánku
+        </button>
+      </div>
+    </form>
+  </div>
+</dialog>

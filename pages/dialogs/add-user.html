@@ -1,0 +1,60 @@
+<dialog class="dialog" id="addUserDialog">
+  <div>
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">SPRÁVA PŘÍSTUPŮ</p>
+        <h2>Přidat uživatele</h2>
+      </div>
+
+      <button class="icon-btn" id="closeAddUser" type="button">×</button>
+    </div>
+
+    <form id="userForm">
+      <div class="form-grid">
+
+        <label class="field">
+          <span>Jméno</span>
+          <input id="newUserFirst" type="text" placeholder="Jméno" autocomplete="given-name" required />
+        </label>
+
+        <label class="field">
+          <span>Příjmení</span>
+          <input id="newUserLast" type="text" placeholder="Příjmení" autocomplete="family-name" required />
+        </label>
+
+        <label class="field">
+          <span>Status uživatele</span>
+          <select id="newUserRole" required>
+            <option value="admin">Admin – správce skladu</option>
+            <option value="write">Write – pohyby skladu</option>
+            <option value="supervisor">Supervisor – pohyby skladu po schválení</option>
+            <option value="read" selected>Read – prohlížení skladu</option>
+          </select>
+        </label>
+
+        <label class="field full">
+          <span>GitHub token uživatele</span>
+          <input id="newUserToken" type="password" placeholder="github_pat_…" autocomplete="off" required />
+        </label>
+
+      </div>
+
+      <p class="muted dialog-note">
+        Pro získání přístupu musí pozvaný uživatel otevřít odkaz a potvrdit přijetí pozvánky. Následně může dokončit
+        registraci a přihlášení.
+      </p>
+
+      <p class="invite-status" id="userSaveStatus" role="status"></p>
+
+      <div class="dialog-footer">
+        <button class="btn btn-light" id="closeAddUser2" type="button">
+          Zavřít
+        </button>
+
+        <button class="btn btn-primary" id="saveUserButton" type="submit">
+          Uložit
+        </button>
+      </div>
+    </form>
+  </div>
+</dialog>

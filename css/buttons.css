@@ -1,0 +1,74 @@
+.btn {
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: #fff
+}
+
+.btn-primary:hover {
+    background: #1d4ed8
+}
+
+.btn-light {
+    background: #eef2f7;
+    color: #344054
+}
+
+.mini-btn {
+    border: 1px solid #e0e6ef;
+    background: #fff;
+    border-radius: 7px;
+    padding: 6px 8px;
+    cursor: pointer;
+    color: #344054;
+    font-size: 11px
+}
+
+.mini-btn:hover {
+    border-color: #9bb8f3;
+    background: #f5f8ff
+}
+
+.icon-btn {
+    border: 0;
+    background: #f0f3f7;
+    border-radius: 8px;
+    width: 34px;
+    height: 34px;
+    font-size: 22px;
+    cursor: pointer
+}
+
+/* Ovládací prvky bez oprávnění k zápisu zůstávají viditelné, ale jsou neaktivní. */
+button:disabled,
+.permission-disabled:disabled {
+    opacity: .42 !important;
+    cursor: not-allowed !important;
+    filter: grayscale(1)
+}
+
+.nav-btn:disabled {
+    color: #9aa3b2;
+    border-bottom-color: transparent
+}
+
+.top-actions #userManagementBtn {
+    background: #e8eefc;
+    color: #234b9a
+}
+.btn-remove {
+    background: #fff0f0;
+    color: #c0392b;
+}
+
+.btn-remove:hover {
+    background: #ffe4e4;
+}
