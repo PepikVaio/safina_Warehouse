@@ -46,13 +46,17 @@ button:disabled,.permission-disabled:disabled{opacity:.42!important;cursor:not-a
 @media(max-width:760px){.user-profile-info{padding:12px}.profile-info-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);column-gap:8px}.profile-info-grid>div,.profile-info-grid>strong{padding:10px 5px;font-size:12px}.profile-info-grid .profile-info-heading{font-size:13px;font-weight:700;color:#172033;border-bottom:2px solid #667085}}
 
 
-/* Zamknutí scrollování stránky při otevřeném modálním dialogu */
+/* Zamknutí scrollování celé stránky při otevřeném dialogu */
+html:has(dialog[open]),
 body:has(dialog[open]) {
-  overflow: hidden;
+  overflow: hidden !important;
+  height: 100%;
   overscroll-behavior: none;
 }
 
-/* Scrollování zůstává povolené uvnitř dialogu */
+/* Scrollování uvnitř dialogu zůstává povolené */
 dialog[open] {
+  overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
