@@ -44,3 +44,15 @@ button:disabled,.permission-disabled:disabled{opacity:.42!important;cursor:not-a
 .profile-token input{width:100%;background:#f8fafc;color:#667085;cursor:default}
 .invite-status{font-size:12px;line-height:1.5;color:#475467;min-height:0}
 @media(max-width:760px){.user-profile-info{padding:12px}.profile-info-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);column-gap:8px}.profile-info-grid>div,.profile-info-grid>strong{padding:10px 5px;font-size:12px}.profile-info-grid .profile-info-heading{font-size:13px;font-weight:700;color:#172033;border-bottom:2px solid #667085}}
+
+
+/* Zamknutí scrollování stránky při otevřeném modálním dialogu */
+body:has(dialog[open]) {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Scrollování zůstává povolené uvnitř dialogu */
+dialog[open] {
+  overscroll-behavior: contain;
+}
