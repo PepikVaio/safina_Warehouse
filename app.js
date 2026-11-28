@@ -256,10 +256,6 @@ function bind() {
     // Tisk
   on("detailPrint","click",()=>showPrint(currentDetailId));
 
-on("printLabelBack","click",()=>switchView("stock"));
-
-on("printLabelButton","click",()=>window.print());
-
   // Historie
   on("historySearch","input",renderHistory);
   on("historyFilter","change",renderHistory);
@@ -1587,14 +1583,12 @@ function switchView(view) {
   movementElement("view","out").classList.toggle("hidden",view!=="out");
 
   $("historyView").classList.toggle("hidden",view!=="history");
-  $("printLabelView").classList.toggle("hidden",view!=="print");
 
   $("pageTitle").textContent=({
     stock:"Přehled skladu",
     in:"Příjem",
     out:"Výdej",
-    history:"Historie pohybů",
-    print:"Tisk QR štítku"
+    history:"Historie pohybů"
   })[view];
 
   if(view==="in"||view==="out") {
@@ -2490,50 +2484,31 @@ function showPrint(id) {
 
   if(!p) return;
 
-  if(!p.id) {
-    toast("Položka nemá platné ID.");
-    return;
+  const key="sklad-print-label";
+
+  const labelData={
+    id:p.id,
+    name:p.name||"",
+    partNumber:p.partNumber||"",
+    suppliers:(p.suppliers||[])
+      .filter(s=>s?.name)
+      .map(s=>({name:s.name})),
+    machine:p.machine||""
+  };
+
+  localStorage.setItem(key,JSON.stringify(labelData));
+
+  const printWindow=window.open(
+    new URL("print-label.html",window.location.href).href,
+    "_blank"
+  );
+
+  if(!printWindow) {
+    localStorage.removeItem(key);
+    toast("Povol vyskakovací okna pro tisk štítku.");
   }
-
-  $("detailDialog")?.close();
-
-  $("printLabelTitle").textContent=p.name||"";
-
-  const fields=[
-    ["printPartNumberRow","printPartNumber",p.partNumber],
-    ["printSupplierRow","printSupplier",p.suppliers?.find(s=>s?.name)?.name],
-    ["printMachineRow","printMachine",p.machine]
-  ];
-
-  fields.forEach(([rowId,valueId,value])=>{
-    const row=$(rowId);
-    const el=$(valueId);
-
-    if(!row||!el) return;
-
-    const text=String(value||"").trim();
-
-    row.classList.toggle("hidden",!text);
-    el.textContent=text;
-  });
-
-  const qr=$("printQr");
-  qr.innerHTML="";
-
-  if(!window.QRCode) {
-    toast("Knihovna QR kódů není dostupná.");
-    return;
-  }
-
-  new QRCode(qr,{
-    text:String(p.id),
-    width:180,
-    height:180,
-    correctLevel:QRCode.CorrectLevel.M
-  });
-
-  switchView("print");
 }
+
 // =========================================================
 // SPUŠTĚNÍ APLIKACE
 // =========================================================
