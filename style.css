@@ -45,4 +45,20 @@ button:disabled,.permission-disabled:disabled{opacity:.42!important;cursor:not-a
 .invite-status{font-size:12px;line-height:1.5;color:#475467;min-height:0}
 @media(max-width:760px){.user-profile-info{padding:12px}.profile-info-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);column-gap:8px}.profile-info-grid>div,.profile-info-grid>strong{padding:10px 5px;font-size:12px}.profile-info-grid .profile-info-heading{font-size:13px;font-weight:700;color:#172033;border-bottom:2px solid #667085}}
 
+/* Lepší chování modálních dialogů na iPhonu */
+dialog[open] {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  max-height: 85vh;
+  max-height: 85dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+}
 
+/* Zabránění přenosu scrollování z dialogu na pozadí */
+dialog[open]::backdrop {
+  touch-action: none;
+}
