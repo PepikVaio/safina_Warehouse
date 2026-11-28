@@ -72,6 +72,7 @@
 
     .qr {
       width: 48%;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -89,7 +90,7 @@
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 5mm;
+      gap: 4mm;
     }
 
     .field {
@@ -152,7 +153,6 @@
 
     <div class="content">
       <div class="qr" id="qr"></div>
-
       <div class="info" id="info"></div>
     </div>
   </div>
@@ -167,7 +167,7 @@
     const $ = id => document.getElementById(id);
 
     function addField(label, value) {
-      if (!value) return;
+      if (!value || !String(value).trim()) return;
 
       const field = document.createElement("div");
       field.className = "field";
@@ -192,20 +192,27 @@
       try {
         const part = JSON.parse(raw);
 
+        if (!part.id) {
+          throw new Error("Chybí ID položky.");
+        }
+
         $("partName").textContent = part.name || "";
         $("info").innerHTML = "";
         $("qr").innerHTML = "";
 
         addField("OBJEDNACÍ ČÍSLO", part.partNumber);
 
-        (part.suppliers || []).forEach(supplier => {
-          addField("DODAVATEL", supplier.name);
-        });
+        const supplier = (part.suppliers || [])
+          .find(s => s?.name?.trim());
 
-        addField("ZAŘÍZENÍ", part.machine);
+        if (supplier) {
+          addField("DODAVATEL", supplier.name);
+        }
+
+        addField("TYP ZAŘÍZENÍ", part.machine);
 
         new QRCode($("qr"), {
-          text: part.id,
+          text: String(part.id),
           width: 300,
           height: 300,
           correctLevel: QRCode.CorrectLevel.M
@@ -215,7 +222,8 @@
         $("label").style.display = "flex";
 
       } catch (error) {
-        $("empty").textContent = "Nepodařilo se načíst údaje položky.";
+        $("empty").textContent =
+          "Nepodařilo se načíst údaje položky.";
       }
     }
 
