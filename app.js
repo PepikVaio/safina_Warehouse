@@ -253,10 +253,14 @@ function bind() {
   on("detailStockIn","click",()=>openMovementFromDetail("in"));
   on("detailStockOut","click",()=>openMovementFromDetail("out"));
 
-  // Tisk
-  on("detailPrint","click",()=>showPrint(currentDetailId));
-  on("closePrint","click",()=>$("printDialog")?.close());
-  on("printBtn","click",()=>window.print());
+  // Tisk QR štítku
+on("detailPrint","click",()=>showPrint(currentDetailId));
+
+on("closePrint","click",closePrintDialog);
+on("closePrint2","click",closePrintDialog);
+
+on("printBtn","click",printLabel);
+
 
   // Historie
   on("historySearch","input",renderHistory);
@@ -2485,33 +2489,217 @@ function stopQrScanner() {
 function showPrint(id) {
   const p=parts.find(x=>x.id===id);
 
-  if(!p) return;
+  if(!p) {
+    toast("Položka nebyla nalezena.");
+    return;
+  }
 
-  const labelData={
-    id:p.id,
-    name:p.name||"",
-    partNumber:p.partNumber||"",
-    suppliers:(p.suppliers||[])
-      .filter(s=>s?.name)
-      .map(s=>({name:s.name})),
-    machine:p.machine||""
-  };
+  const dialog=$("printDialog");
 
-  localStorage.setItem(
-    "sklad-print-label",
-    JSON.stringify(labelData)
-  );
+  if(!dialog) {
+    toast("Tiskový dialog nebyl nalezen.");
+    return;
+  }
 
-  const printWindow=window.open(
-    new URL("print-label.html",window.location.href).href,
-    "_blank"
-  );
+  $("printName").textContent=p.name||"";
+  $("printInfo").innerHTML="";
+  $("printQr").innerHTML="";
 
-  if(!printWindow) {
-    localStorage.removeItem("sklad-print-label");
-    toast("Povol vyskakovací okna pro tisk štítku.");
+  function addPrintField(label,value) {
+    if(!value||!String(value).trim()) return;
+
+    const field=document.createElement("div");
+    field.className="print-field";
+
+    const title=document.createElement("div");
+    title.className="print-field-label";
+    title.textContent=label;
+
+    const text=document.createElement("div");
+    text.className="print-field-value";
+    text.textContent=value;
+
+    field.append(title,text);
+    $("printInfo").appendChild(field);
+  }
+
+  addPrintField("OBJEDNACÍ ČÍSLO",p.partNumber);
+
+  const supplier=(p.suppliers||[])
+    .find(s=>s?.name?.trim());
+
+  if(supplier) {
+    addPrintField("DODAVATEL",supplier.name);
+  }
+
+  addPrintField("TYP ZAŘÍZENÍ",p.machine);
+
+  if(!window.QRCode) {
+    toast("Knihovna QR kódů není dostupná.");
+    return;
+  }
+
+  new QRCode($("printQr"),{
+    text:String(p.id),
+    width:300,
+    height:300,
+    correctLevel:QRCode.CorrectLevel.M
+  });
+
+  if(!dialog.open) {
+    dialog.showModal();
   }
 }
+
+
+function closePrintDialog() {
+  $("printDialog")?.close();
+}
+
+
+function printLabel() {
+  const dialog=$("printDialog");
+
+  if(!dialog?.open) return;
+
+  window.print();
+}
+
+
+function installPrintStyles() {
+  if($("printLabelStyles")) return;
+
+  const style=document.createElement("style");
+  style.id="printLabelStyles";
+
+  style.textContent=`
+    .label-preview {
+      width:63.5mm;
+      height:76.2mm;
+      margin:0 auto;
+      padding:3mm;
+      background:white;
+      color:#111;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      box-sizing:border-box;
+    }
+
+    .print-label-name {
+      min-height:18mm;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      font-size:17pt;
+      font-weight:bold;
+      line-height:1.1;
+      overflow-wrap:anywhere;
+      border-bottom:1px solid #222;
+      padding-bottom:2mm;
+    }
+
+    .print-label-content {
+      flex:1;
+      min-height:0;
+      display:flex;
+      align-items:center;
+      gap:2mm;
+      padding-top:2mm;
+    }
+
+    .print-label-qr {
+      width:48%;
+      flex-shrink:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .print-label-qr img,
+    .print-label-qr canvas {
+      width:100% !important;
+      height:auto !important;
+      image-rendering:pixelated;
+    }
+
+    .print-label-info {
+      flex:1;
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:4mm;
+    }
+
+    .print-field {
+      overflow-wrap:anywhere;
+    }
+
+    .print-field-label {
+      font-size:7pt;
+      font-weight:bold;
+      color:#555;
+      margin-bottom:1mm;
+    }
+
+    .print-field-value {
+      font-size:10pt;
+      font-weight:bold;
+      line-height:1.15;
+    }
+
+    @page {
+      size:63.5mm 76.2mm;
+      margin:0;
+    }
+
+    @media print {
+      body * {
+        visibility:hidden !important;
+      }
+
+      #printDialog,
+      #printDialog * {
+        visibility:visible !important;
+      }
+
+      #printDialog {
+        position:absolute !important;
+        display:block !important;
+        inset:0 auto auto 0 !important;
+        width:63.5mm !important;
+        height:76.2mm !important;
+        max-width:none !important;
+        max-height:none !important;
+        margin:0 !important;
+        padding:0 !important;
+        border:0 !important;
+        border-radius:0 !important;
+        box-shadow:none !important;
+        overflow:visible !important;
+        background:white !important;
+      }
+
+      #printDialog .dialog-header,
+      #printDialog .dialog-footer {
+        display:none !important;
+      }
+
+      #printLabel {
+        width:63.5mm !important;
+        height:76.2mm !important;
+        margin:0 !important;
+        padding:3mm !important;
+        box-shadow:none !important;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+installPrintStyles();
 
 
 // =========================================================

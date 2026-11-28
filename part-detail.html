@@ -1,3 +1,64 @@
+
 <!-- HTML fragment loaded by index.html; keep app element IDs unchanged. -->
-<dialog class="dialog" id="detailDialog"><div class="dialog-header"><div><p class="eyebrow">DETAIL NÁHRADNÍHO DÍLU</p><h2 id="detailTitle"></h2></div><button class="icon-btn" id="closeDetail">×</button></div><div id="detailContent"></div><div class="dialog-footer detail-footer"><div class="detail-footer-left"><button class="btn btn-primary" id="detailEdit">Upravit</button><button class="btn btn-light" id="detailStockIn">＋ Naskladnit</button><button class="btn btn-light" id="detailStockOut">− Vyskladnit</button></div><div class="detail-footer-right"><button class="btn btn-light" id="detailPrint">Tisk QR štítku</button><button class="btn btn-light" id="detailClose2">Zavřít</button></div></div></dialog>
-<dialog class="dialog qr-dialog" id="printDialog"><div class="label-preview" id="printLabel"><div id="printQr"></div></div><div class="dialog-footer"><button class="btn btn-light" id="closePrint">Zavřít</button><button class="btn btn-primary" id="printBtn">Tisk</button></div></dialog>
+
+<dialog class="dialog" id="detailDialog">
+
+  <div class="dialog-header">
+    <div>
+      <p class="eyebrow">DETAIL NÁHRADNÍHO DÍLU</p>
+      <h2 id="detailTitle"></h2>
+    </div>
+    <button class="icon-btn" id="closeDetail">×</button>
+  </div>
+
+  <div id="detailContent"></div>
+
+  <div class="dialog-footer detail-footer">
+    <div class="detail-footer-left">
+      <button class="btn btn-primary" id="detailEdit">Upravit</button>
+      <button class="btn btn-light" id="detailStockIn">＋ Naskladnit</button>
+      <button class="btn btn-light" id="detailStockOut">− Vyskladnit</button>
+    </div>
+
+    <div class="detail-footer-right">
+      <button class="btn btn-light" id="detailPrint">Tisk QR štítku</button>
+      <button class="btn btn-light" id="detailClose2">Zavřít</button>
+    </div>
+  </div>
+
+</dialog>
+
+
+<!-- QR label print dialog -->
+
+<dialog class="dialog qr-dialog" id="printDialog">
+
+  <div class="dialog-header">
+    <div>
+      <p class="eyebrow">TISKOVÝ ŠTÍTEK</p>
+      <h2>Náhled QR štítku</h2>
+    </div>
+
+    <button class="icon-btn" id="closePrint">×</button>
+  </div>
+
+  <div class="label-preview" id="printLabel">
+
+    <div class="print-label-name" id="printName"></div>
+
+    <div class="print-label-content">
+
+      <div class="print-label-qr" id="printQr"></div>
+
+      <div class="print-label-info" id="printInfo"></div>
+
+    </div>
+
+  </div>
+
+  <div class="dialog-footer">
+    <button class="btn btn-light" id="closePrint2">Zavřít</button>
+    <button class="btn btn-primary" id="printBtn">Tisk</button>
+  </div>
+
+</dialog>
