@@ -1,9 +1,13 @@
-
 <!-- HTML fragment loaded by index.html; keep app element IDs unchanged. -->
-<section class="view hidden" id="printLabelView">
-  <div class="toolbar print-label-toolbar">
-    <button class="btn btn-light" id="printLabelBack" type="button">← Zpět do skladu</button>
-    <button class="btn btn-primary" id="printLabelButton" type="button">Tisk štítku</button>
+
+<dialog class="dialog print-label-dialog" id="printLabelDialog">
+  <div class="dialog-header">
+    <div>
+      <h2>Tisk QR štítku</h2>
+      <p class="muted">Náhled štítku před tiskem</p>
+    </div>
+
+    <button class="icon-btn" id="printLabelClose" type="button">×</button>
   </div>
 
   <div class="label-preview print-label-preview" id="printLabel">
@@ -30,4 +34,14 @@
       </div>
     </div>
   </div>
-</section>
+
+  <div class="dialog-footer print-label-footer">
+    <button class="btn btn-light" id="printLabelBack" type="button">
+      Zpět
+    </button>
+
+    <button class="btn btn-primary" id="printLabelButton" type="button">
+      Tisk štítku
+    </button>
+  </div>
+</dialog>
